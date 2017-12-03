@@ -1,4 +1,4 @@
-package com.yanghui.elephant.server.comfig;
+package com.yanghui.elephant.server.config;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.plugins.PaginationInterceptor;
 
 @Configuration
 @MapperScan(basePackages = {"com.yanghui.elephant.store.mapper*"})
-public class MybatisPlusConfig {
+public class MybatisPlusConfiguration {
 	
 	/**
 	 * mybatis-plus分页插件<br>

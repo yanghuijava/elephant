@@ -24,6 +24,9 @@ public class MessageEntity extends Model<MessageEntity>{
 	@TableId(value="id", type= IdType.AUTO)
 	private Long id;
 	
+	@TableField("message_id")
+	private String messageId;
+	
 	private String destination;
 	
 	private byte[] body;

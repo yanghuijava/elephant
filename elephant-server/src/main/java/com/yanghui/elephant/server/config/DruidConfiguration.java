@@ -1,4 +1,4 @@
-package com.yanghui.elephant.server.comfig;
+package com.yanghui.elephant.server.config;
 
 import java.sql.SQLException;
 

@@ -18,14 +18,18 @@ import io.netty.util.internal.StringUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import lombok.extern.log4j.Log4j2;
 
+import com.yanghui.elephant.common.Pair;
 import com.yanghui.elephant.remoting.RemotingClient;
+import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.common.RemotingHelper;
 import com.yanghui.elephant.remoting.common.RemotingUtil;
 import com.yanghui.elephant.remoting.exception.RemotingConnectException;
@@ -46,7 +50,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 	private final ConcurrentHashMap<String, ChannelWrapper> channelTables = new ConcurrentHashMap<>();
 
 	private DefaultEventExecutorGroup defaultEventExecutorGroup;
-
+	
 	private SerializeType serializeTypeCurrentRPC = SerializeType.HESSIAN;
 
 	public NettyRemotingClient(NettyClientConfig nettyClientConfig) {
@@ -111,27 +115,6 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 		}
 	}
 	
-	private void processMessageReceived(ChannelHandlerContext ctx,RemotingCommand msg) {
-		switch (msg.getType()) {
-		case REQUEST_COMMAND:
-			
-			break;
-		case RESPONSE_COMMAND:
-			processResponseCommand(ctx,msg);
-			break;
-		default:
-			break;
-		}
-	}
-
-	private void processResponseCommand(ChannelHandlerContext ctx,RemotingCommand msg) {
-		int unique = msg.getUnique();
-		ResponseFuture rf = this.responseTable.get(unique);
-		if(rf != null){
-			rf.putResponse(msg);
-		}
-	}
-
 	@Override
 	public void shutdown() {
 		try {
@@ -355,5 +338,10 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 		public ChannelFuture getChannelFuture() {
 			return channelFuture;
 		}
+	}
+
+	@Override
+	public void registerDefaultProcessor(RequestProcessor processor,ExecutorService executor) {
+		this.defaultRequestProcessor = new Pair<RequestProcessor, ExecutorService>(processor, executor);
 	}
 }

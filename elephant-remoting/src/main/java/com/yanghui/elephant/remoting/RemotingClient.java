@@ -1,6 +1,7 @@
 package com.yanghui.elephant.remoting;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
@@ -22,4 +23,5 @@ public interface RemotingClient extends RemotingService{
     public RemotingCommand invokeSync(final String addr, final RemotingCommand request,final long timeoutMillis)
     		throws InterruptedException,RemotingSendRequestException,RemotingTimeoutException,RemotingConnectException;
 
+    void registerDefaultProcessor(final RequestProcessor processor, final ExecutorService executor);
 }

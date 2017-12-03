@@ -28,7 +28,7 @@ import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 import com.yanghui.elephant.remoting.procotol.SerializeType;
 
 @Log4j2
-public class NettyRemotingServer implements RemotingServer {
+public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
 
 	private final ServerBootstrap serverBootstrap;
 	private final EventLoopGroup eventLoopGroupSelector;
@@ -41,8 +41,6 @@ public class NettyRemotingServer implements RemotingServer {
 	
 	private SerializeType serializeTypeCurrentRPC = SerializeType.HESSIAN;
 	
-	private Pair<RequestProcessor, ExecutorService> defaultRequestProcessor;
-
 	public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
 		this.nettyServerConfig = nettyServerConfig;
 		this.serverBootstrap = new ServerBootstrap();
@@ -130,28 +128,6 @@ public class NettyRemotingServer implements RemotingServer {
 		}
 	}
 	
-	private void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg){
-		switch (msg.getType()) {
-		case REQUEST_COMMAND:
-			processRequestCommand(ctx,msg);
-			break;
-		case RESPONSE_COMMAND:
-			
-			break;
-		default:
-			break;
-		}
-	}
-
-	private void processRequestCommand(ChannelHandlerContext ctx,RemotingCommand msg) {
-		if(this.defaultRequestProcessor == null){
-			log.warn("没有请求处理器，数据将被丢弃：{}",msg);
-			return;
-		}
-		RemotingCommand respose = this.defaultRequestProcessor.getObject1().processRequest(ctx, msg);
-		ctx.writeAndFlush(respose);
-	}
-
 	@Override
 	public void shutdown() {
 		this.eventLoopGroupBoss.shutdownGracefully();

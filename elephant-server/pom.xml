@@ -10,5 +10,13 @@
     <artifactId>elephant-server</artifactId>
     <name>elephant-server ${project.version}</name>
     <dependencies>
-    </dependencies>
+    	<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>elephant-store</artifactId>
+		</dependency>
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    </dependencies>	
 </project>

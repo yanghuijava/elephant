@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yanghui.elephant.store.mapper.MessageEntityMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.yanghui.elephant.store.entity.MessageEntity">
+		<id column="id" property="id" />
+		<id column="destination" property="destination" />
+		<id column="body" property="body" />
+		<id column="status" property="status" />
+		<id column="properties" property="properties" />
+		<result column="remark" property="remark" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+	</resultMap>
+</mapper>

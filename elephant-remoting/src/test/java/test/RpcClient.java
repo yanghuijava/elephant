@@ -12,8 +12,10 @@ import com.yanghui.elephant.remoting.procotol.SerializeType;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -51,9 +53,18 @@ public class RpcClient {
 					sc.pipeline().addLast(new NettyEncoder(SerializeType.HESSIAN));
 					sc.pipeline().addLast(new NettyDecoder(RemotingCommand.class,SerializeType.HESSIAN));
 					sc.pipeline().addLast(new IdleStateHandler(0, 0, 120));
+					sc.pipeline().addLast(new NettyServerInvokerHandler());
 				}
 			});
 	}
+	
+	class NettyServerInvokerHandler extends SimpleChannelInboundHandler<RemotingCommand>{
+		@Override
+		protected void channelRead0(ChannelHandlerContext ctx,RemotingCommand msg) throws Exception {
+			System.out.println(msg);
+		}
+	}
+	
 	
 	public void connect() throws InterruptedException{
 		this.f = this.b.connect().sync();
@@ -77,13 +88,14 @@ public class RpcClient {
 	public static void main(String[] args) throws InterruptedException {
 		RpcClient rpcClient = RpcClient.getInstance();
 		RemotingCommand cmd = new RemotingCommand();
+		cmd.setGroup("test");
 		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
 		cmd.setBody(new Message("queue://test","我是消息".getBytes()));
 		cmd.setLocalTransactionState(LocalTransactionState.PRE_MESSAGE);
 		try {
 			rpcClient.getChannelFuture().channel().writeAndFlush(cmd);
 		} finally{
-			rpcClient.shutdown();
+//			rpcClient.shutdown();
 		}
 	}
 }

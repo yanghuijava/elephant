@@ -27,6 +27,8 @@ public class MessageEntity extends Model<MessageEntity>{
 	@TableField("message_id")
 	private String messageId;
 	
+	private String group;
+	
 	private String destination;
 	
 	private byte[] body;

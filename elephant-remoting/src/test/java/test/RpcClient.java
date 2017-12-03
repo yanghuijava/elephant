@@ -2,6 +2,7 @@ package test;
 
 import java.net.InetSocketAddress;
 
+import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.remoting.netty.NettyDecoder;
 import com.yanghui.elephant.remoting.netty.NettyEncoder;
@@ -78,6 +79,7 @@ public class RpcClient {
 		RemotingCommand cmd = new RemotingCommand();
 		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
 		cmd.setBody(new Message("queue://test","我是消息".getBytes()));
+		cmd.setLocalTransactionState(LocalTransactionState.PRE_MESSAGE);
 		try {
 			rpcClient.getChannelFuture().channel().writeAndFlush(cmd);
 		} finally{

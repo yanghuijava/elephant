@@ -6,6 +6,7 @@
 	<resultMap id="BaseResultMap" type="com.yanghui.elephant.store.entity.MessageEntity">
 		<id column="id" property="id" />
 		<id column="message_id" property="messageId" />
+		<id column="group" property="group" />
 		<id column="destination" property="destination" />
 		<id column="body" property="body" />
 		<id column="status" property="status" />

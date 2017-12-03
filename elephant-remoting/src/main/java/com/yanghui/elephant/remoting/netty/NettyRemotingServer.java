@@ -148,7 +148,8 @@ public class NettyRemotingServer implements RemotingServer {
 			log.warn("没有请求处理器，数据将被丢弃：{}",msg);
 			return;
 		}
-		this.defaultRequestProcessor.getObject1().processRequest(ctx, msg);
+		RemotingCommand respose = this.defaultRequestProcessor.getObject1().processRequest(ctx, msg);
+		ctx.writeAndFlush(respose);
 	}
 
 	@Override

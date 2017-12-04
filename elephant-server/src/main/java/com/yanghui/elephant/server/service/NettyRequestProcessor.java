@@ -16,6 +16,7 @@ import com.yanghui.elephant.common.constant.MessageStatus;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
+import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 import com.yanghui.elephant.store.entity.MessageEntity;
 import com.yanghui.elephant.store.mapper.MessageEntityMapper;
 
@@ -66,17 +67,23 @@ public class NettyRequestProcessor implements RequestProcessor {
 	
 	private MessageEntity bulidMessageEntity(RemotingCommand request){
 		Message message = (Message)request.getBody();
+		MessageRequestHeader header = (MessageRequestHeader)request.getCustomHeader();
 		MessageEntity entity = new MessageEntity();
 		entity.setBody(message.getBody());
 		entity.setCreateTime(new Date());
 		entity.setDestination(message.getDestination());
-		entity.setGroup(request.getGroup());
+		entity.setGroup(header.getGroup());
 		entity.setMessageId(message.getMessageId());
 		if(!CollectionUtils.isEmpty(message.getProperties())){
 			entity.setProperties(JSON.toJSONString(message.getProperties()));
 		}
+		entity.setTransaction(header.isTransaction());
 		entity.setUpdateTime(entity.getCreateTime());
-		switch (request.getLocalTransactionState()) {
+		if(!entity.isTransaction()){
+			entity.setStatus(MessageStatus.CONFIRMED.getStatus());
+			return entity;
+		}
+		switch (header.getLocalTransactionState()) {
 		case PRE_MESSAGE:
 			entity.setStatus(MessageStatus.CONFIRMING.getStatus());
 			break;

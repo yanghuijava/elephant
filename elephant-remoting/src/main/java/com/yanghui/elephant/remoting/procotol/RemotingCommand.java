@@ -3,9 +3,6 @@ package com.yanghui.elephant.remoting.procotol;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.yanghui.elephant.common.constant.LocalTransactionState;
-
 import lombok.Data;
 
 @Data
@@ -15,13 +12,12 @@ public class RemotingCommand implements Serializable{
 
 	private static AtomicInteger requestId = new AtomicInteger(0);
 	
-	private String group;
 	private int code;
 	private int unique = requestId.getAndIncrement();
 	private Object body;
 	private String remark;
 	private HashMap<String, Object> extFields;
-	private LocalTransactionState localTransactionState;
+	private CommandCustomHeader customHeader;
 	
 	private RemotingCommandType type;
 	

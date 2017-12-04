@@ -35,6 +35,8 @@ public class MessageEntity extends Model<MessageEntity>{
 	
 	private Integer status;
 	
+	private boolean transaction;
+	
 	private String properties;
 	
 	@TableField("create_time")

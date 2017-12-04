@@ -10,6 +10,7 @@
 		<id column="destination" property="destination" />
 		<id column="body" property="body" />
 		<id column="status" property="status" />
+		<id column="transaction" property="transaction" />
 		<id column="properties" property="properties" />
 		<result column="remark" property="remark" />
 		<result column="create_time" property="createTime" />

@@ -1,4 +1,4 @@
-package com.yanghui.elephant.common;
+package com.yanghui.elephant.common.utils;
 
 public class Pair<T1, T2> {
 	

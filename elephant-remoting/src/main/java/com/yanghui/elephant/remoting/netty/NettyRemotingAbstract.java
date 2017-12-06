@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 
 import lombok.extern.log4j.Log4j2;
 
-import com.yanghui.elephant.common.Pair;
+import com.yanghui.elephant.common.utils.Pair;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.common.RemotingHelper;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;

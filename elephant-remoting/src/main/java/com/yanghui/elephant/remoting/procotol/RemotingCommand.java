@@ -13,13 +13,22 @@ public class RemotingCommand implements Serializable{
 	private static AtomicInteger requestId = new AtomicInteger(0);
 	
 	private int code;
-	private int unique = requestId.getAndIncrement();
+	private int unique;
 	private Object body;
 	private String remark;
 	private HashMap<String, Object> extFields;
 	private CommandCustomHeader customHeader;
 	
 	private RemotingCommandType type;
+	
+	public static RemotingCommand buildRequestCmd(Object body,CommandCustomHeader customHeader){
+		RemotingCommand cmd = new RemotingCommand();
+		cmd.setUnique(requestId.getAndIncrement());
+		cmd.setBody(body);
+		cmd.setCustomHeader(customHeader);
+		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
+		return cmd;
+	}
 	
 	public static RemotingCommand buildResposeCmd(int code,int unique){
 		RemotingCommand cmd = new RemotingCommand();

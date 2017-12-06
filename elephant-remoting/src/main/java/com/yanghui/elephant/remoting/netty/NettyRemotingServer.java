@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.extern.log4j.Log4j2;
 
-import com.yanghui.elephant.common.Pair;
+import com.yanghui.elephant.common.utils.Pair;
 import com.yanghui.elephant.remoting.RemotingServer;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;

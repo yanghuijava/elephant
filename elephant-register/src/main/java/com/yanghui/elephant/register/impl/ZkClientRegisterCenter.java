@@ -2,6 +2,7 @@ package com.yanghui.elephant.register.impl;
 
 import java.util.List;
 
+import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkStateListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.SerializableSerializer;
@@ -16,6 +17,7 @@ import com.yanghui.elephant.register.IRegisterCenter4Provider;
 import com.yanghui.elephant.register.constant.ZKConstant;
 import com.yanghui.elephant.register.dto.ProducerDto;
 import com.yanghui.elephant.register.dto.ServerDto;
+import com.yanghui.elephant.register.listener.IServerChanngeListener;
 import com.yanghui.elephant.register.listener.IZKReconnectionListener;
 
 @Log4j2
@@ -34,6 +36,8 @@ public class ZkClientRegisterCenter implements IRegisterCenter4Invoker,IRegister
     private int zkConnectionTimeOut = 1000;
     
     private IZKReconnectionListener zkReconnectionListener;
+    
+    private IServerChanngeListener serverChanngeListener;
 	
 	@Override
 	public void init() {
@@ -106,25 +110,49 @@ public class ZkClientRegisterCenter implements IRegisterCenter4Invoker,IRegister
 	@Override
 	public List<ServerDto> getServerList() {
 		List<ServerDto> result = Lists.newArrayList();
-		List<String> servers = this.zkClient.getChildren(ZKConstant.ROOT_PATH + ZKConstant.SERVER_PATH);
+		String serversFullPath = ZKConstant.ROOT_PATH + ZKConstant.SERVER_PATH;
+		List<String> servers = this.zkClient.getChildren(serversFullPath);
 		if(servers == null || servers.isEmpty()){
 			return result;
 		}
 		for(String server : servers){
-			String[] arr = server.split(ZKConstant.SEPARATOR);
-			ServerDto dto = new ServerDto();
-			dto.setServerName(arr[0]);
-			dto.setDateTime(arr[2]);
-			String[] ipPort = arr[1].split(":");
-			dto.setIp(ipPort[0]);
-			dto.setPort(Integer.valueOf(ipPort[1]));
+			ServerDto dto = analysisServerPath(server);
 			result.add(dto);
 		}
+		if(this.serverChanngeListener != null){
+			this.zkClient.subscribeChildChanges(serversFullPath, new IZkChildListener() {
+				@Override
+				public void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
+					log.info("server is channge parantPath：{}，children：{}",parentPath,currentChilds);
+					List<ServerDto> result = Lists.newArrayList();
+					for(String serverPath : currentChilds){
+						result.add(analysisServerPath(serverPath));
+					}
+					serverChanngeListener.handleServerChannge(result);
+				}
+			});
+		}
 		return result;
+	}
+	
+	private ServerDto analysisServerPath(String serverPath){
+		String[] arr = serverPath.split(ZKConstant.SEPARATOR);
+		ServerDto dto = new ServerDto();
+		dto.setServerName(arr[0]);
+		dto.setDateTime(arr[2]);
+		String[] ipPort = arr[1].split(":");
+		dto.setIp(ipPort[0]);
+		dto.setPort(Integer.valueOf(ipPort[1]));
+		return dto;
 	}
 
 	@Override
 	public List<ProducerDto> getProducerByGroup(String group) {
 		return null;
+	}
+
+	@Override
+	public void registerServerChanngeListener(IServerChanngeListener serverChanngeListener) {
+		this.serverChanngeListener = serverChanngeListener;
 	}
 }

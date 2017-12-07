@@ -1,6 +1,8 @@
 package com.yanghui.elephant.client.impl;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 
 import com.yanghui.elephant.register.IRegisterCenter4Invoker;
 import com.yanghui.elephant.register.IRegisterCenter4Provider;
@@ -20,15 +22,22 @@ public class MQProducerInstance {
 	private IRegisterCenter4Invoker registerCenter4Invoker;
 	private IRegisterCenter4Provider registerCenter4Provider;
 	
+	@Setter(value=AccessLevel.PRIVATE)
+	private volatile boolean started = false;
+	@Setter(value=AccessLevel.PRIVATE)
+	private volatile boolean shutdown = false;
+	
 	private MQProducerInstance(){
-		
 	}
 	
 	public static MQProducerInstance getInstance(){
 		return instance;
 	}
 	
-	public void start(){
+	public synchronized void start(){
+		if(this.started){
+			return;
+		}
 		this.remotingClient = new NettyRemotingClient(this.nettyClientConfig);
 		this.remotingClient.start();
 		ZkClientRegisterCenter zkClientRegisterCenter = new ZkClientRegisterCenter();
@@ -36,10 +45,15 @@ public class MQProducerInstance {
 		this.registerCenter4Invoker = zkClientRegisterCenter;
 		this.registerCenter4Provider = zkClientRegisterCenter;
 		zkClientRegisterCenter.init();
+		this.started = true;
 	}
 	
-	public void shutdown(){
+	public synchronized void shutdown(){
+		if(this.shutdown){
+			return;
+		}
 		this.remotingClient.shutdown();
 		this.registerCenter4Provider.destroy();
+		this.shutdown = true;
 	}
 }

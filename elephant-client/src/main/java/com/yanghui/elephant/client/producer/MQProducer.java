@@ -11,6 +11,6 @@ public interface MQProducer {
 	
 	SendResult send(Message msg) throws MQClientException;
 	
-	TransactionSendResult sendMessageTransaction(Message msg,LocalTransactionExecuter excuter,Object arg);
+	TransactionSendResult sendMessageTransaction(Message msg,LocalTransactionExecuter excuter,Object arg) throws MQClientException;
 
 }

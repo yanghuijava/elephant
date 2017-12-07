@@ -10,15 +10,15 @@ import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 @Data
 public class DefaultMQProducer implements MQProducer {
 	
-	private int maxMessageSize = 1024 * 1024 * 4; // 4M
+	protected int maxMessageSize = 1024 * 1024 * 4; // 4M
 	
-	private String producerGroup;
+	protected String producerGroup;
 	
-	private long sendMsgTimeout = 3000;
+	protected long sendMsgTimeout = 3000;
 	
-	private String registerCenter;
+	protected String registerCenter;
 	
-	private DefaultMQProducerImpl defaultMQProducerImpl;
+	protected DefaultMQProducerImpl defaultMQProducerImpl;
 	
 	public DefaultMQProducer(){
 		this(null);
@@ -49,7 +49,7 @@ public class DefaultMQProducer implements MQProducer {
 
 	@Override
 	public TransactionSendResult sendMessageTransaction(Message msg,
-			LocalTransactionExecuter excuter, Object arg) {
+			LocalTransactionExecuter excuter, Object arg) throws MQClientException{
 		throw new RuntimeException("sendMessageInTransaction not implement, please use TransactionMQProducer class");
 	}
 }

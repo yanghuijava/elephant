@@ -4,27 +4,43 @@ import io.netty.util.internal.StringUtil;
 
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import com.google.common.collect.Lists;
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.producer.DefaultMQProducer;
+import com.yanghui.elephant.client.producer.LocalTransactionExecuter;
 import com.yanghui.elephant.client.producer.SendResult;
 import com.yanghui.elephant.client.producer.SendStatus;
+import com.yanghui.elephant.client.producer.TransactionMQProducer;
+import com.yanghui.elephant.client.producer.TransactionSendResult;
 import com.yanghui.elephant.common.constant.Constant;
 import com.yanghui.elephant.common.message.Message;
+import com.yanghui.elephant.common.utils.IPHelper;
+import com.yanghui.elephant.register.dto.ProducerDto;
 import com.yanghui.elephant.register.dto.ServerDto;
 import com.yanghui.elephant.register.listener.IServerChanngeListener;
+import com.yanghui.elephant.register.listener.IZKReconnectionListener;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.netty.NettyClientConfig;
 import com.yanghui.elephant.remoting.procotol.CommandCustomHeader;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 
-public class DefaultMQProducerImpl implements IServerChanngeListener {
+public class DefaultMQProducerImpl implements IServerChanngeListener,IZKReconnectionListener {
 
-	private MQProducerInstance mqProducerFactory;
+	protected MQProducerInstance mqProducerFactory;
 
-	private DefaultMQProducer defaultMQProducer;
+	protected DefaultMQProducer defaultMQProducer;
 
-	private volatile List<String> servers;
+	protected volatile List<String> servers;
+	
+	protected BlockingQueue<Runnable> checkRequestQueue;
+	
+	protected ExecutorService checkExecutor;
 
 	public DefaultMQProducerImpl(DefaultMQProducer defaultMQProducer) {
 		this.mqProducerFactory = MQProducerInstance.getInstance();
@@ -69,16 +85,6 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 
 	public void shutdown() {
 		this.mqProducerFactory.shutdown();
-	}
-
-	@Override
-	public void handleServerChannge(List<ServerDto> serverDtoList) {
-		this.servers.clear();
-		List<String> newServers = Lists.newArrayList();
-		for (ServerDto dto : serverDtoList) {
-			newServers.add(dto.getIp() + ":" + dto.getPort());
-		}
-		this.servers.addAll(newServers);
 	}
 
 	public SendResult send(Message msg,CommandCustomHeader header) throws MQClientException{
@@ -131,5 +137,51 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 		if (msg.getBody().length > defaultMQProducer.getMaxMessageSize()) {
 			throw new MQClientException(4,"the message body size over max value, MAX: " + defaultMQProducer.getMaxMessageSize());
 		}
+	}
+
+	public void initTransaction() {
+		TransactionMQProducer producer = (TransactionMQProducer) this.defaultMQProducer;
+        this.checkRequestQueue = new LinkedBlockingQueue<Runnable>(producer.getCheckRequestHoldMax());
+        this.checkExecutor = new ThreadPoolExecutor(
+            producer.getCheckThreadPoolMinSize(),
+            producer.getCheckThreadPoolMaxSize(),
+            1000 * 60,
+            TimeUnit.MILLISECONDS,
+            this.checkRequestQueue);
+        this.mqProducerFactory.getRegisterCenter4Provider().registerProducer(buildProducerDto());
+        this.mqProducerFactory.getRegisterCenter4Provider().addZKReconnectionListener(this);
+	}
+	public void destroyTransaction() {
+        this.checkExecutor.shutdown();
+        this.checkRequestQueue.clear();
+    }
+	
+	public TransactionSendResult sendMessageInTransaction(final Message msg,CommandCustomHeader header,final LocalTransactionExecuter tranExecuter, final Object arg)throws MQClientException{
+		return null;
+	}
+
+	@Override
+	public void handleStateForSyncConnected() {
+		this.mqProducerFactory.getRegisterCenter4Provider().registerProducer(buildProducerDto());
+	}
+	@Override
+	public void handleServerChannge(List<ServerDto> serverDtoList) {
+		this.servers.clear();
+		List<String> newServers = Lists.newArrayList();
+		for (ServerDto dto : serverDtoList) {
+			newServers.add(dto.getIp() + ":" + dto.getPort());
+		}
+		this.servers.addAll(newServers);
+	}
+	
+	private ProducerDto buildProducerDto(){
+		TransactionMQProducer producer = (TransactionMQProducer) this.defaultMQProducer;
+		ProducerDto producerDto = new ProducerDto();
+        producerDto.setGroup(producer.getProducerGroup());
+        producerDto.setIp(IPHelper.getRealIp());
+        producerDto.setCheckThreadPoolMaxSize(producer.getCheckThreadPoolMaxSize());
+        producerDto.setCheckThreadPoolMinSize(producer.getCheckThreadPoolMinSize());
+        producerDto.setCheckRequestHoldMax(producer.getCheckRequestHoldMax());
+        return producerDto;
 	}
 }

@@ -14,6 +14,7 @@ import com.alibaba.fastjson.JSON;
 import com.yanghui.elephant.common.constant.Constant;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.constant.MessageStatus;
+import com.yanghui.elephant.common.constant.SendStatus;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
@@ -115,6 +116,7 @@ public class NettyRequestProcessor implements RequestProcessor {
 		if(!CollectionUtils.isEmpty(message.getProperties())){
 			entity.setProperties(JSON.toJSONString(message.getProperties()));
 		}
+		entity.setSendStatus(SendStatus.WAIT_SEND.getStatus());
 		entity.setTransaction(isTransaction);
 		entity.setRemark(request.getRemark());
 		entity.setUpdateTime(entity.getCreateTime());

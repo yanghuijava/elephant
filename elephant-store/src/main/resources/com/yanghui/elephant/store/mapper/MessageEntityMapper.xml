@@ -10,10 +10,17 @@
 		<id column="destination" property="destination" />
 		<id column="body" property="body" />
 		<id column="status" property="status" />
+		<id column="send_status" property="sendStatus" />
 		<id column="transaction" property="transaction" />
 		<id column="properties" property="properties" />
 		<result column="remark" property="remark" />
 		<result column="create_time" property="createTime" />
 		<result column="update_time" property="updateTime" />
 	</resultMap>
+	
+	<select id="queryTransactionNotComplete" resultMap="BaseResultMap">
+		SELECT * FROM t_message WHERE status = 100
+		and `transaction` = 1
+		and create_time &lt;= DATE_ADD(NOW(), INTERVAL -1 MINUTE)
+	</select>
 </mapper>

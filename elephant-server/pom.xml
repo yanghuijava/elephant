@@ -1,16 +1,17 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>com.yanghui.elephant</groupId>
-        <artifactId>elephant</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<groupId>com.yanghui.elephant</groupId>
+		<artifactId>elephant</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
 
-    <modelVersion>4.0.0</modelVersion>
-    <packaging>jar</packaging>
-    <artifactId>elephant-server</artifactId>
-    <name>elephant-server ${project.version}</name>
-    <dependencies>
-    	<dependency>
+	<modelVersion>4.0.0</modelVersion>
+	<packaging>jar</packaging>
+	<artifactId>elephant-server</artifactId>
+	<name>elephant-server ${project.version}</name>
+	<dependencies>
+		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>elephant-store</artifactId>
 		</dependency>
@@ -23,8 +24,22 @@
 			<artifactId>elephant-register</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-    </dependencies>	
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.dangdang</groupId>
+			<artifactId>elastic-job-lite-core</artifactId>
+			<exclusions>
+				<exclusion>
+					<artifactId>zookeeper</artifactId>
+					<groupId>org.apache.zookeeper</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.dangdang</groupId>
+			<artifactId>elastic-job-lite-spring</artifactId>
+		</dependency>
+	</dependencies>
 </project>

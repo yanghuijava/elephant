@@ -35,11 +35,22 @@
 		<curator.version>2.10.0</curator.version>
 		<alibaba.druid.version>1.1.2</alibaba.druid.version>
 		<mysql.version>5.1.43</mysql.version>
+		<elastic.job.version>2.1.5</elastic.job.version>
 	</properties>
 
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>com.dangdang</groupId>
+				<artifactId>elastic-job-lite-core</artifactId>
+				<version>${elastic.job.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.dangdang</groupId>
+				<artifactId>elastic-job-lite-spring</artifactId>
+				<version>${elastic.job.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>com.alibaba</groupId>
 				<artifactId>druid</artifactId>

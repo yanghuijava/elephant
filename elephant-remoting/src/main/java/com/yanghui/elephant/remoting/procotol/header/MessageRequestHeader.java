@@ -12,7 +12,6 @@ public class MessageRequestHeader implements CommandCustomHeader,Serializable {
 	
 	private static final long serialVersionUID = 7337405667020443161L;
 	
-	private boolean isTransaction = false;
 	private String group;
 	private LocalTransactionState localTransactionState;
 

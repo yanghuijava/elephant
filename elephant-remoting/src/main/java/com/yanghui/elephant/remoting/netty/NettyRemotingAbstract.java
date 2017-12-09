@@ -49,14 +49,14 @@ public abstract class NettyRemotingAbstract {
 		ExecutorService executorService = this.defaultRequestProcessor.getObject2();
 		if(executorService == null){
 			RemotingCommand respose = requestProcessor.processRequest(ctx, msg);
-			ctx.writeAndFlush(respose);
+			if(respose != null)ctx.writeAndFlush(respose);
 			return;
 		}
 		executorService.submit(new Runnable() {
 			@Override
 			public void run() {
 				RemotingCommand respose = requestProcessor.processRequest(ctx, msg);
-				ctx.writeAndFlush(respose);
+				if(respose != null)ctx.writeAndFlush(respose);
 			}
 		});
 	}
@@ -107,4 +107,21 @@ public abstract class NettyRemotingAbstract {
 			responseTable.remove(unique);
 		}
 	}
+	
+	public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
+	        throws RemotingTimeoutException, RemotingSendRequestException {
+        try {
+            channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture f) throws Exception {
+                    if (!f.isSuccess()) {
+                        log.warn("send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.warn("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
+            throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
+        }
+    }
 }

@@ -344,4 +344,21 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 	public void registerDefaultProcessor(RequestProcessor processor,ExecutorService executor) {
 		this.defaultRequestProcessor = new Pair<RequestProcessor, ExecutorService>(processor, executor);
 	}
+
+	@Override
+	public void invokeOneway(String addr, RemotingCommand request,long timeoutMillis)throws InterruptedException,RemotingSendRequestException,RemotingTimeoutException,RemotingConnectException {
+		final Channel channel = this.getAndCreateChannel(addr);
+        if (channel != null && channel.isActive()) {
+            try {
+                this.invokeOnewayImpl(channel, request, timeoutMillis);
+            } catch (RemotingSendRequestException e) {
+                log.warn("invokeOneway: send request exception, so close the channel[{}]", addr);
+                this.closeChannel(addr, channel);
+                throw e;
+            }
+        } else {
+            this.closeChannel(addr, channel);
+            throw new RemotingConnectException(addr);
+        }
+	}
 }

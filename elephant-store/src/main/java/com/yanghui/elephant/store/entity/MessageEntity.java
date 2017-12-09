@@ -35,7 +35,7 @@ public class MessageEntity extends Model<MessageEntity>{
 	
 	private Integer status;
 	
-	private boolean transaction;
+	private Boolean transaction;
 	
 	private String properties;
 	
@@ -45,6 +45,7 @@ public class MessageEntity extends Model<MessageEntity>{
 	@TableField("update_time")
 	private Date updateTime;
 
+	private String remark;
 	@Override
 	protected Serializable pkVal() {
 		return this.id;

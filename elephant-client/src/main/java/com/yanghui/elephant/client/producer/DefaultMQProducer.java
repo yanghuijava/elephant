@@ -5,6 +5,7 @@ import lombok.Data;
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.impl.DefaultMQProducerImpl;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
+import com.yanghui.elephant.common.constant.RemotingCommandCode;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 @Data
@@ -44,7 +45,7 @@ public class DefaultMQProducer implements MQProducer {
 		MessageRequestHeader header = new MessageRequestHeader();
 		header.setGroup(this.producerGroup);
 		header.setLocalTransactionState(LocalTransactionState.COMMIT_MESSAGE);
-		return this.defaultMQProducerImpl.send(msg, header);
+		return this.defaultMQProducerImpl.send(msg, header,RemotingCommandCode.NORMAL_MESSAGE);
 	}
 
 	@Override

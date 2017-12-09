@@ -3,6 +3,9 @@ package com.yanghui.elephant.remoting.procotol;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.yanghui.elephant.common.constant.RemotingCommandCode;
+
 import lombok.Data;
 
 @Data
@@ -18,15 +21,17 @@ public class RemotingCommand implements Serializable{
 	private String remark;
 	private HashMap<String, Object> extFields;
 	private CommandCustomHeader customHeader;
+	private RemotingCommandCode remotingCommandCode;
 	
 	private RemotingCommandType type;
 	
-	public static RemotingCommand buildRequestCmd(Object body,CommandCustomHeader customHeader){
+	public static RemotingCommand buildRequestCmd(Object body,CommandCustomHeader customHeader,RemotingCommandCode remotingCommandCode){
 		RemotingCommand cmd = new RemotingCommand();
 		cmd.setUnique(requestId.getAndIncrement());
 		cmd.setBody(body);
 		cmd.setCustomHeader(customHeader);
 		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
+		cmd.setRemotingCommandCode(remotingCommandCode);
 		return cmd;
 	}
 	

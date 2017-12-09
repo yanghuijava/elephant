@@ -16,6 +16,15 @@ public class TransactionMQProducer extends DefaultMQProducer {
     private int checkThreadPoolMinSize = 1;
     private int checkThreadPoolMaxSize = 1;
     private int checkRequestHoldMax = 2000;
+    
+    public TransactionMQProducer(){
+    	this(null);
+    }
+    
+    public TransactionMQProducer(String group){
+    	super(group);
+    }
+    
 	@Override
 	public void start() throws MQClientException {
 		super.start();
@@ -32,10 +41,12 @@ public class TransactionMQProducer extends DefaultMQProducer {
 		if (null == this.transactionCheckListener) {
             throw new MQClientException("localTransactionBranchCheckListener is null", null);
         }
+		if(null == excuter){
+			throw new MQClientException("localTransactionExecuter is null", null);
+		}
 		MessageRequestHeader header = new MessageRequestHeader();
 		header.setGroup(this.producerGroup);
 		header.setLocalTransactionState(LocalTransactionState.PRE_MESSAGE);
-		header.setTransaction(true);
 		return this.defaultMQProducerImpl.sendMessageInTransaction(msg, header, excuter, arg);
 	}
 }

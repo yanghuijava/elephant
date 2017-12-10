@@ -23,4 +23,20 @@
 		and `transaction` = 1
 		and create_time &lt;= DATE_ADD(NOW(), INTERVAL -1 MINUTE)
 	</select>
+	
+	<update id="updateByMessageId" parameterType="com.yanghui.elephant.store.entity.MessageEntity">
+		update t_message 
+		<set>
+			<if test="status != null">status = #{status},</if>
+			<if test="sendStatus != null">send_status = #{sendStatus},</if>
+			<if test="updateTime != null">update_time = #{updateTime},</if>
+		</set>
+		where message_id = #{messageId}
+	</update>
+	
+	<select id="querySendMQExcetion" resultMap="BaseResultMap">
+		SELECT * FROM t_message WHERE status = 102
+		and send_status = 1
+		and create_time &lt;= DATE_ADD(NOW(), INTERVAL -1 MINUTE)
+	</select>
 </mapper>

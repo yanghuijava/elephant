@@ -12,7 +12,7 @@ public class Producer {
 		producer.setRegisterCenter("172.16.21.12:2181");
 		producer.start();
 		for(int i=0;i<1;i++){
-			Message msg = new Message("queue://yanghui.test1", ("我是消息" + i).getBytes());
+			Message msg = new Message("topic://VirtualTopic.Test", ("我是消息" + i).getBytes());
 			SendResult sendResult = producer.send(msg);
 			System.out.println(sendResult);
 		}

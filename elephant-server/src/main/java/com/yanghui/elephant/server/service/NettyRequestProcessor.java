@@ -1,12 +1,14 @@
 package com.yanghui.elephant.server.service;
 
 import java.util.Date;
+import java.util.Map;
 
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import io.netty.channel.ChannelHandlerContext;
 
@@ -16,6 +18,7 @@ import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.constant.MessageStatus;
 import com.yanghui.elephant.common.constant.SendStatus;
 import com.yanghui.elephant.common.message.Message;
+import com.yanghui.elephant.mq.producer.ProducerService;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
@@ -28,6 +31,8 @@ public class NettyRequestProcessor implements RequestProcessor {
 	
 	@Autowired
 	private MessageEntityMapper messageEntityMapper;
+	@Autowired
+	private ProducerService producerService;
 	
 	@Override
 	public RemotingCommand processRequest(ChannelHandlerContext ctx,RemotingCommand request) {
@@ -36,9 +41,13 @@ public class NettyRequestProcessor implements RequestProcessor {
 		case NORMAL_MESSAGE:
 			RemotingCommand response = handleMessage(request,false);
 			if(response.getCode() == Constant.SUCCESS){
-				/**
-				 * 异步发送mq
-				 */
+				Message message = (Message)request.getBody();
+				try {
+					sendMessageToMQ(message);
+				} catch (Exception e) {
+					response.setCode(Constant.SEND_MQ_FAIL);
+					log.info("发送mq失败：{}",e);
+				}
 			}
 			return response;
 		case TRANSACTION_PRE_MESSAGE:
@@ -63,6 +72,7 @@ public class NettyRequestProcessor implements RequestProcessor {
 		return response;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void handleTransactionEndAndCheckMessage(RemotingCommand request){
 		try {
 			String messageId = request.getBody().toString();
@@ -73,13 +83,30 @@ public class NettyRequestProcessor implements RequestProcessor {
 			entity.setRemark(request.getRemark());
 			saveOrUpdateMassageEntity(entity, false);
 			if(entity.getStatus() == MessageStatus.CONFIRMED.getStatus()){
-				/**
-				 * 异步发送mq
-				 */
+				MessageEntity select = new MessageEntity();
+				select.setMessageId(messageId);
+				MessageEntity find = this.messageEntityMapper.selectOne(select);
+				Message message = new Message();
+				message.setMessageId(messageId);
+				message.setBody(find.getBody());
+				message.setDestination(find.getDestination());
+				if(!StringUtils.isEmpty(find.getProperties())){
+					message.setProperties(JSON.parseObject(find.getProperties(), Map.class));
+				}
+				sendMessageToMQ(message);
 			}
 		} catch (Exception e) {
 			log.error("handleTransactionEndAndCheckMessage 发生异常：{}",e);
 		}
+	}
+	
+	private void sendMessageToMQ(Message message){
+		this.producerService.sendMessage(message);
+		MessageEntity update = new MessageEntity();
+		update.setMessageId(message.getMessageId());
+		update.setSendStatus(SendStatus.ALREADY_SEND.getStatus());
+		update.setUpdateTime(new Date());
+		this.messageEntityMapper.updateByMessageId(update);
 	}
 	
 	private int saveOrUpdateMassageEntity(MessageEntity entity,boolean isInsert){

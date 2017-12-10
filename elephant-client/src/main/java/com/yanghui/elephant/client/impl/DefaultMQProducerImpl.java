@@ -5,6 +5,7 @@ import io.netty.util.internal.StringUtil;
 
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -142,6 +143,9 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 		}
 		if (msg.getBody().length > defaultMQProducer.getMaxMessageSize()) {
 			throw new MQClientException(4,"the message body size over max value, MAX: " + defaultMQProducer.getMaxMessageSize());
+		}
+		if(StringUtil.isNullOrEmpty(msg.getMessageId())){
+			msg.setMessageId(UUID.randomUUID().toString());
 		}
 	}
 

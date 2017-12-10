@@ -13,6 +13,7 @@ import com.dangdang.ddframe.job.lite.config.LiteJobConfiguration;
 import com.dangdang.ddframe.job.lite.spring.api.SpringJobScheduler;
 import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperConfiguration;
 import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperRegistryCenter;
+import com.yanghui.elephant.server.job.RetrySendMQJob;
 import com.yanghui.elephant.server.job.TransactionCheckJob;
 
 @Configuration
@@ -33,5 +34,13 @@ public class ElasticJobConfigurer {
                 JobCoreConfiguration.newBuilder(TransactionCheckJob.class.getSimpleName(), "0 0/1 * * * ?", 1).build(),
                 TransactionCheckJob.class.getCanonicalName())).overwrite(true).build();
         return new SpringJobScheduler(transactionCheckJob, regCenter, liteJobConfiguration);
+    }
+    
+    @Bean(initMethod = "init")
+    public JobScheduler registryRetrySendMQJob(RetrySendMQJob retrySendMQJob) {
+        LiteJobConfiguration liteJobConfiguration = LiteJobConfiguration.newBuilder(new SimpleJobConfiguration(
+                JobCoreConfiguration.newBuilder(RetrySendMQJob.class.getSimpleName(), "0 0/1 * * * ?", 1).build(),
+                RetrySendMQJob.class.getCanonicalName())).overwrite(true).build();
+        return new SpringJobScheduler(retrySendMQJob, regCenter, liteJobConfiguration);
     }
 }

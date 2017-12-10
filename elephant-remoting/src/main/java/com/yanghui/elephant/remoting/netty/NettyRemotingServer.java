@@ -12,6 +12,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 
@@ -34,6 +36,7 @@ import lombok.extern.log4j.Log4j2;
 import com.yanghui.elephant.common.utils.Pair;
 import com.yanghui.elephant.remoting.RemotingServer;
 import com.yanghui.elephant.remoting.RequestProcessor;
+import com.yanghui.elephant.remoting.common.RemotingUtil;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 import com.yanghui.elephant.remoting.procotol.SerializeType;
 import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
@@ -128,7 +131,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 		this.removeExpireKeyExecutor.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
-				log.info(channelMap);
+				log.debug(channelMap);
 				try {
 					if(channelMap.isEmpty()){
 						return;
@@ -162,10 +165,22 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 		
 		@Override
 	    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-	        cause.printStackTrace();
-	        //发生异常,关闭链路
-	        ctx.close();
+			log.warn("NETTY SERVER PIPELINE: exceptionCaught {}", ctx.channel().remoteAddress());
+//            log.warn("NETTY SERVER PIPELINE: exceptionCaught exception.", cause);
+            RemotingUtil.closeChannel(ctx.channel());
 	    }
+		
+		@Override
+		public void userEventTriggered(ChannelHandlerContext ctx, Object evt)throws Exception {
+			if (evt instanceof IdleStateEvent) {
+                IdleStateEvent evnet = (IdleStateEvent) evt;
+                if (evnet.state().equals(IdleState.ALL_IDLE)) {
+                    log.warn("NETTY SERVER PIPELINE: IDLE exception [{}]", ctx.channel().remoteAddress());
+                    RemotingUtil.closeChannel(ctx.channel());
+                }
+            }
+            ctx.fireUserEventTriggered(evt);
+		}
 
 		@Override
 		protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg)	throws Exception {

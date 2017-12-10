@@ -36,11 +36,25 @@
 		<alibaba.druid.version>1.1.2</alibaba.druid.version>
 		<mysql.version>5.1.43</mysql.version>
 		<elastic.job.version>2.1.5</elastic.job.version>
+		<spring-jms.version>4.1.6.RELEASE</spring-jms.version>
+		<activemq.version>5.14.3</activemq.version>
 	</properties>
 
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-jms</artifactId> 
+				<version>${spring-jms.version}</version> </dependency> <dependency> <groupId>org.apache.activemq</groupId> 
+				<artifactId>activemq-all</artifactId> <version>${activemq.version}</version> 
+				</dependency> <dependency> <groupId>org.apache.activemq</groupId> <artifactId>activemq-pool</artifactId> 
+				<version>${activemq.version}</version> </dependency> <dependency> <groupId>org.apache.activemq</groupId> 
+				<artifactId>activemq-jms-pool</artifactId> <version>${activemq.version}</version> 
+				</dependency> -->
+			<dependency>
+				<groupId>org.apache.activemq</groupId>
+				<artifactId>activemq-pool</artifactId>
+				<version>${activemq.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>com.dangdang</groupId>
 				<artifactId>elastic-job-lite-core</artifactId>
@@ -227,6 +241,17 @@
 			<artifactId>google-collections</artifactId>
 			<version>1.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.0.4</version>
+		</dependency>
+		<dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
 
 		<!-- 以下不直接依赖 -->
 		<dependency>

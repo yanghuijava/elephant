@@ -17,6 +17,10 @@
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
+			<artifactId>elephant-mq</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>elephant-remoting</artifactId>
 		</dependency>
 		<dependency>

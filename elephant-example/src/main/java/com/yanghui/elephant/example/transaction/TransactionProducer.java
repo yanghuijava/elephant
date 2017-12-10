@@ -2,7 +2,6 @@ package com.yanghui.elephant.example.transaction;
 
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.producer.LocalTransactionExecuter;
-import com.yanghui.elephant.client.producer.TransactionCheckListenerImpl;
 import com.yanghui.elephant.client.producer.TransactionMQProducer;
 import com.yanghui.elephant.common.message.Message;
 
@@ -18,6 +17,6 @@ public class TransactionProducer {
 			Message msg = new Message("queue://yanghui.test2", ("我是事务消息" + i).getBytes());
 			producer.sendMessageTransaction(msg, excuter, null);
 		}
-		producer.shutdown();
+//		producer.shutdown();
 	}
 }

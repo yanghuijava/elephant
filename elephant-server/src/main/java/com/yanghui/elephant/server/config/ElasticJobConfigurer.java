@@ -30,7 +30,7 @@ public class ElasticJobConfigurer {
     @Bean(initMethod = "init")
     public JobScheduler registryTransactionCheckJob(TransactionCheckJob transactionCheckJob) {
         LiteJobConfiguration liteJobConfiguration = LiteJobConfiguration.newBuilder(new SimpleJobConfiguration(
-                JobCoreConfiguration.newBuilder(TransactionCheckJob.class.getSimpleName(), "0 0/2 * * * ?", 1).build(),
+                JobCoreConfiguration.newBuilder(TransactionCheckJob.class.getSimpleName(), "0 0/1 * * * ?", 1).build(),
                 TransactionCheckJob.class.getCanonicalName())).overwrite(true).build();
         return new SpringJobScheduler(transactionCheckJob, regCenter, liteJobConfiguration);
     }

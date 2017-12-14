@@ -39,7 +39,6 @@ import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.common.RemotingUtil;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 import com.yanghui.elephant.remoting.procotol.SerializeType;
-import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 
 @Log4j2
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
@@ -190,19 +189,18 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 	}
 	
 	private void saveChannel(Channel channel,RemotingCommand msg){
-		MessageRequestHeader header = (MessageRequestHeader)msg.getCustomHeader();
 		try {
-			Set<Channel> set = this.channelMap.get(header.getGroup());
+			Set<Channel> set = this.channelMap.get(msg.getGroup());
 			if(set != null){
 				set.add(channel);
 				return;
 			}
 			try{
 				if(lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)){
-					set = this.channelMap.get(header.getGroup());
+					set = this.channelMap.get(msg.getGroup());
 					if(set == null){
 						set = new HashSet<Channel>();
-						channelMap.put(header.getGroup(),set);
+						channelMap.put(msg.getGroup(),set);
 					}
 					set.add(channel);
 				}
@@ -237,8 +235,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
 	@Override
 	public void sendToClient(RemotingCommand request) {
-		MessageRequestHeader header = (MessageRequestHeader)request.getCustomHeader();
-		Set<Channel> set = this.channelMap.get(header.getGroup());
+		Set<Channel> set = this.channelMap.get(request.getGroup());
 		if(set == null){
 			return;
 		}

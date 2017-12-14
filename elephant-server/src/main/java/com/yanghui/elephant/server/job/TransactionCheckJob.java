@@ -13,10 +13,11 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.dangdang.ddframe.job.api.ShardingContext;
 import com.dangdang.ddframe.job.api.simple.SimpleJob;
+import com.yanghui.elephant.common.constant.MessageCode;
+import com.yanghui.elephant.common.constant.RequestCode;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.remoting.RemotingServer;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 import com.yanghui.elephant.store.entity.MessageEntity;
 import com.yanghui.elephant.store.mapper.MessageEntityMapper;
 
@@ -46,10 +47,8 @@ public class TransactionCheckJob implements SimpleJob{
 				if(!StringUtil.isNullOrEmpty(entity.getProperties())){
 					message.setProperties(JSON.parseObject(entity.getProperties(), Map.class));
 				}
-				MessageRequestHeader customHeader = new MessageRequestHeader();
-				customHeader.setGroup(entity.getGroup());
-				RemotingCommand request = RemotingCommand.buildRequestCmd(message, 
-						customHeader, null);
+				RemotingCommand request = RemotingCommand.buildRequestCmd(message, RequestCode.SEND_MESSAGE, MessageCode.TRANSACTION_CHECK_MESSAGE);
+				request.setGroup(entity.getGroup());
 				this.nettyRemotingServer.sendToClient(request);
 			}
 		} catch (Exception e) {

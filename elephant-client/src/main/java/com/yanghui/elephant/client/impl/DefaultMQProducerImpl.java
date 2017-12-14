@@ -22,9 +22,10 @@ import com.yanghui.elephant.client.producer.SendResult;
 import com.yanghui.elephant.client.producer.SendStatus;
 import com.yanghui.elephant.client.producer.TransactionMQProducer;
 import com.yanghui.elephant.client.producer.TransactionSendResult;
+import com.yanghui.elephant.common.constant.RequestCode;
 import com.yanghui.elephant.common.constant.ResponseCode;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
-import com.yanghui.elephant.common.constant.RemotingCommandCode;
+import com.yanghui.elephant.common.constant.MessageCode;
 import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.register.dto.ServerDto;
 import com.yanghui.elephant.register.listener.IServerChanngeListener;
@@ -33,9 +34,7 @@ import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.netty.NettyClientConfig;
-import com.yanghui.elephant.remoting.procotol.CommandCustomHeader;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 @Log4j2
 public class DefaultMQProducerImpl implements IServerChanngeListener {
 
@@ -94,10 +93,11 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 		this.mqProducerFactory.shutdown();
 	}
 
-	public SendResult send(Message msg,CommandCustomHeader header,RemotingCommandCode remotingCommandCode) throws MQClientException{
+	public SendResult send(Message msg,MessageCode messageCode) throws MQClientException{
 		checkMessage(msg, defaultMQProducer);
 		SendResult result = new SendResult();
-		RemotingCommand request = RemotingCommand.buildRequestCmd(msg, header,remotingCommandCode);
+		RemotingCommand request = RemotingCommand.buildRequestCmd(msg, RequestCode.SEND_MESSAGE, messageCode);
+		request.setGroup(this.defaultMQProducer.getProducerGroup());
 		try {
 			RemotingCommand response = this.mqProducerFactory.getRemotingClient()
 					.invokeSync(choiceOneServer(), request, this.defaultMQProducer.getSendMsgTimeout());
@@ -166,13 +166,12 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 		@Override
 		public RemotingCommand processRequest(ChannelHandlerContext ctx,RemotingCommand request) {
 			TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
-			Message msg = (Message)request.getBody();
+			Message msg = request.getMessage();
 			LocalTransactionState localState = producer.getTransactionCheckListener().checkLocalTransactionState(msg);
-			MessageRequestHeader customHeader = new MessageRequestHeader();
-			customHeader.setGroup(defaultMQProducer.getProducerGroup());
-			customHeader.setLocalTransactionState(localState);
-			RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(msg.getMessageId(),
-					customHeader,RemotingCommandCode.TRANSACTION_CHECK_MESSAGE);
+			RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(new Message(msg.getMessageId()),
+					RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_CHECK_MESSAGE);
+			checkTransactionRequest.setGroup(defaultMQProducer.getProducerGroup());
+			checkTransactionRequest.setLocalTransactionState(localState);
 			ctx.writeAndFlush(checkTransactionRequest);
 			return null;
 		}
@@ -183,11 +182,11 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
         this.checkRequestQueue.clear();
     }
 	
-	public TransactionSendResult sendMessageInTransaction(final Message msg,CommandCustomHeader header,final LocalTransactionExecuter tranExecuter, final Object arg)throws MQClientException{
+	public TransactionSendResult sendMessageInTransaction(final Message msg,final LocalTransactionExecuter tranExecuter, final Object arg)throws MQClientException{
 		TransactionSendResult transactionSendResult = new TransactionSendResult();
 		SendResult sendResult = null;
 		try {
-			sendResult = this.send(msg, header,RemotingCommandCode.TRANSACTION_PRE_MESSAGE);
+			sendResult = this.send(msg, MessageCode.TRANSACTION_PRE_MESSAGE);
 		} catch (Exception e) {
 			throw new MQClientException("send message Exception", e);
 		}
@@ -228,10 +227,10 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 
 	private void endTransaction(SendResult sendResult,LocalTransactionState localState,
 			Throwable localException) throws InterruptedException, RemotingSendRequestException,RemotingTimeoutException,RemotingConnectException{
-		MessageRequestHeader customHeader = new MessageRequestHeader();
-		customHeader.setGroup(this.defaultMQProducer.getProducerGroup());
-		customHeader.setLocalTransactionState(localState);
-		RemotingCommand request = RemotingCommand.buildRequestCmd(sendResult.getMsgId(), customHeader, RemotingCommandCode.TRANSACTION_END_MESSAGE);
+		Message msg = new Message(sendResult.getMsgId());
+		RemotingCommand request = RemotingCommand.buildRequestCmd(msg,RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_END_MESSAGE);
+		request.setGroup(this.defaultMQProducer.getProducerGroup());
+		request.setLocalTransactionState(localState);
 		if(localException != null){
 			request.setRemark("executeLocalTransactionBranch exception: " + localException.toString());
 		}

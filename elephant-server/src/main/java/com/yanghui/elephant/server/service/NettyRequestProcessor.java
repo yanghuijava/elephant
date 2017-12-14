@@ -21,7 +21,6 @@ import com.yanghui.elephant.common.message.Message;
 import com.yanghui.elephant.mq.producer.ProducerService;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 import com.yanghui.elephant.store.entity.MessageEntity;
 import com.yanghui.elephant.store.mapper.MessageEntityMapper;
 
@@ -37,13 +36,12 @@ public class NettyRequestProcessor implements RequestProcessor {
 	@Override
 	public RemotingCommand processRequest(ChannelHandlerContext ctx,RemotingCommand request) {
 		log.info("处理消息：{}",request);
-		switch (request.getRemotingCommandCode()) {
+		switch (request.getMessageCode()) {
 		case NORMAL_MESSAGE:
 			RemotingCommand response = handleMessage(request,false);
 			if(response.getCode() == ResponseCode.SUCCESS){
-				Message message = (Message)request.getBody();
 				try {
-					sendMessageToMQ(message);
+					sendMessageToMQ(request.getMessage());
 				} catch (Exception e) {
 					response.setCode(ResponseCode.SEND_MQ_FAIL);
 					log.info("发送mq失败：{}",e);
@@ -75,11 +73,10 @@ public class NettyRequestProcessor implements RequestProcessor {
 	@SuppressWarnings("unchecked")
 	private void handleTransactionEndAndCheckMessage(RemotingCommand request){
 		try {
-			String messageId = request.getBody().toString();
-			MessageRequestHeader header = (MessageRequestHeader)request.getCustomHeader();
+			String messageId = request.getMessage().getMessageId();
 			MessageEntity entity = new MessageEntity();
 			entity.setMessageId(messageId);
-			entity.setStatus(buildStatus(header.getLocalTransactionState()));
+			entity.setStatus(buildStatus(request.getLocalTransactionState()));
 			entity.setRemark(request.getRemark());
 			saveOrUpdateMassageEntity(entity, false);
 			if(entity.getStatus() == MessageStatus.CONFIRMED.getStatus()){
@@ -132,13 +129,12 @@ public class NettyRequestProcessor implements RequestProcessor {
 	}
 	
 	private MessageEntity bulidMessageEntity(RemotingCommand request,boolean isTransaction){
-		Message message = (Message)request.getBody();
-		MessageRequestHeader header = (MessageRequestHeader)request.getCustomHeader();
+		Message message = request.getMessage();
 		MessageEntity entity = new MessageEntity();
 		entity.setBody(message.getBody());
 		entity.setCreateTime(new Date());
 		entity.setDestination(message.getDestination());
-		entity.setGroup(header.getGroup());
+		entity.setGroup(request.getGroup());
 		entity.setMessageId(message.getMessageId());
 		if(!CollectionUtils.isEmpty(message.getProperties())){
 			entity.setProperties(JSON.toJSONString(message.getProperties()));
@@ -151,15 +147,12 @@ public class NettyRequestProcessor implements RequestProcessor {
 			entity.setStatus(MessageStatus.CONFIRMED.getStatus());
 			return entity;
 		}
-		
-		entity.setStatus(buildStatus(header.getLocalTransactionState()));
+		entity.setStatus(MessageStatus.CONFIRMING.getStatus());
 		return entity;
 	}
 	
 	private int buildStatus(LocalTransactionState localTransactionState){
 		switch (localTransactionState) {
-		case PRE_MESSAGE:
-			return MessageStatus.CONFIRMING.getStatus();
 		case COMMIT_MESSAGE:
 			return MessageStatus.CONFIRMED.getStatus();
 		case ROLLBACK_MESSAGE:

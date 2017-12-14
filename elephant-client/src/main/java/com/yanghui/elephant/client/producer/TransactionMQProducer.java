@@ -1,9 +1,7 @@
 package com.yanghui.elephant.client.producer;
 
 import com.yanghui.elephant.client.exception.MQClientException;
-import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.message.Message;
-import com.yanghui.elephant.remoting.procotol.header.MessageRequestHeader;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,9 +42,6 @@ public class TransactionMQProducer extends DefaultMQProducer {
 		if(null == excuter){
 			throw new MQClientException("localTransactionExecuter is null", null);
 		}
-		MessageRequestHeader header = new MessageRequestHeader();
-		header.setGroup(this.producerGroup);
-		header.setLocalTransactionState(LocalTransactionState.PRE_MESSAGE);
-		return this.defaultMQProducerImpl.sendMessageInTransaction(msg, header, excuter, arg);
+		return this.defaultMQProducerImpl.sendMessageInTransaction(msg,excuter, arg);
 	}
 }

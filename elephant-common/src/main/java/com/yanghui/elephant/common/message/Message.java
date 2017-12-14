@@ -18,9 +18,13 @@ public class Message implements Serializable{
 	private String messageId;
 	private String destination;
 	private byte[] body;
-	private Map<String,Object> properties;
+	private Map<String,String> properties;
 	
 	public Message(){
+	}
+	
+	public Message(String messageId){
+		this.messageId= messageId;
 	}
 	
 	public Message(String destination,byte[] body){

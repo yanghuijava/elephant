@@ -2,15 +2,19 @@ package com.yanghui.elephant.remoting.netty;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.internal.StringUtil;
@@ -91,9 +95,46 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 						// 心跳
 						ch.pipeline().addLast(new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()));
 						// 业务处理
-						ch.pipeline().addLast(defaultEventExecutorGroup,"nettyClientHandler", new NettyClientHandler());
+						ch.pipeline().addLast(defaultEventExecutorGroup,new NettyConnectManageHandler(), new NettyClientHandler());
 					}
 				});
+	}
+	
+	
+	class NettyConnectManageHandler extends ChannelDuplexHandler{
+		@Override
+        public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+            log.info("NETTY CLIENT PIPELINE: DISCONNECT {}", remoteAddress);
+            closeChannel(ctx.channel());
+            super.disconnect(ctx, promise);
+        }
+		@Override
+        public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+            log.info("NETTY CLIENT PIPELINE: CLOSE {}", remoteAddress);
+            closeChannel(ctx.channel());
+            super.close(ctx, promise);
+        }
+		@Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+            final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+            log.warn("NETTY CLIENT PIPELINE: exceptionCaught {}", remoteAddress);
+            log.warn("NETTY CLIENT PIPELINE: exceptionCaught exception.", cause);
+            closeChannel(ctx.channel());
+        }
+		@Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            if (evt instanceof IdleStateEvent) {
+                IdleStateEvent event = (IdleStateEvent) evt;
+                if (event.state().equals(IdleState.ALL_IDLE)) {
+                    final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+                    log.warn("NETTY CLIENT PIPELINE: IDLE exception [{}]", remoteAddress);
+                    closeChannel(ctx.channel());
+                }
+            }
+            ctx.fireUserEventTriggered(evt);
+        }
 	}
 
 	class NettyClientHandler extends SimpleChannelInboundHandler<RemotingCommand> {
@@ -101,14 +142,6 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 		public void channelReadComplete(ChannelHandlerContext ctx)throws Exception {
 			ctx.flush();
 		}
-
-		@Override
-		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)throws Exception {
-			cause.printStackTrace();
-			// 发生异常,关闭链路
-			ctx.close();
-		}
-
 		@Override
 		protected void channelRead0(ChannelHandlerContext ctx,RemotingCommand msg) throws Exception {
 			processMessageReceived(ctx,msg);

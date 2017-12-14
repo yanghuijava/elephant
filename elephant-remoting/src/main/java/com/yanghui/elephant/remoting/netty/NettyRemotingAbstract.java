@@ -66,6 +66,7 @@ public abstract class NettyRemotingAbstract {
 		ResponseFuture rf = this.responseTable.get(unique);
 		if(rf != null){
 			rf.putResponse(msg);
+			this.responseTable.remove(unique);
 		}else {
 			log.warn("receive response, but not matched any request, " + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
             log.warn(msg);

@@ -3,6 +3,7 @@ package com.yanghui.elephant.remoting.netty;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
@@ -113,7 +114,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 						//心跳
 						ch.pipeline().addLast(new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()));
 						//业务处理
-						ch.pipeline().addLast(defaultEventExecutorGroup,"nettyServerHandler",new NettyServerHandler());
+						ch.pipeline().addLast(defaultEventExecutorGroup,new NettyConnetManageHandler(),new NettyServerHandler());
 					}
 				});
 		if (nettyServerConfig.isServerPooledByteBufAllocatorEnable()) {
@@ -155,20 +156,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 		}, 1000,3000,TimeUnit.MILLISECONDS);
 	}
 	
-	class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
-		
-		@Override
-	    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-	        ctx.flush();
-	    }
-		
+	class NettyConnetManageHandler extends ChannelDuplexHandler{
 		@Override
 	    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 			log.warn("NETTY SERVER PIPELINE: exceptionCaught {}", ctx.channel().remoteAddress());
-//            log.warn("NETTY SERVER PIPELINE: exceptionCaught exception.", cause);
             RemotingUtil.closeChannel(ctx.channel());
 	    }
-		
 		@Override
 		public void userEventTriggered(ChannelHandlerContext ctx, Object evt)throws Exception {
 			if (evt instanceof IdleStateEvent) {
@@ -180,7 +173,13 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
             ctx.fireUserEventTriggered(evt);
 		}
-
+	}
+	
+	class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
+		@Override
+	    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+	        ctx.flush();
+	    }
 		@Override
 		protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg)	throws Exception {
 			saveChannel(ctx.channel(), msg);
@@ -246,5 +245,11 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 			channel.writeAndFlush(request);
 			break;
 		}
+	}
+
+	@Override
+	public void registerProcessor(int requestCode, RequestProcessor processor,ExecutorService executor) {
+		Pair<RequestProcessor, ExecutorService> pair = new Pair<RequestProcessor, ExecutorService>(processor, executor);
+		this.processorTable.put(requestCode, pair);
 	}
 }

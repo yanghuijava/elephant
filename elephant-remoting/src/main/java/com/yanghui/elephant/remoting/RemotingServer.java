@@ -11,5 +11,7 @@ public interface RemotingServer extends RemotingService{
 	void registerDefaultProcessor(final RequestProcessor processor, final ExecutorService executor);
 	
 	void sendToClient(RemotingCommand request);
+	
+	void registerProcessor(int requestCode,final RequestProcessor processor, final ExecutorService executor);
 
 }

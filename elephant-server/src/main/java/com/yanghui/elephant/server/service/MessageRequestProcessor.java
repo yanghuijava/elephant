@@ -26,7 +26,7 @@ import com.yanghui.elephant.store.mapper.MessageEntityMapper;
 
 @Service
 @Log4j2
-public class NettyRequestProcessor implements RequestProcessor {
+public class MessageRequestProcessor implements RequestProcessor {
 	
 	@Autowired
 	private MessageEntityMapper messageEntityMapper;

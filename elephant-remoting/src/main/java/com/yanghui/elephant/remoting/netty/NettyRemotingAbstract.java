@@ -6,9 +6,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-
 import lombok.extern.log4j.Log4j2;
 
 import com.yanghui.elephant.common.utils.Pair;
@@ -22,6 +23,9 @@ import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 public abstract class NettyRemotingAbstract {
 	
 	protected Pair<RequestProcessor, ExecutorService> defaultRequestProcessor;
+	
+	protected Map<Integer, Pair<RequestProcessor, ExecutorService>> processorTable = 
+				new HashMap<Integer, Pair<RequestProcessor, ExecutorService>>(64);
 	
 	protected final ConcurrentHashMap<Integer, ResponseFuture> responseTable =
 	        new ConcurrentHashMap<Integer, ResponseFuture>(256);
@@ -40,25 +44,33 @@ public abstract class NettyRemotingAbstract {
 		}
 	}
 	
-	protected void processRequestCommand(final ChannelHandlerContext ctx,final RemotingCommand msg) {
-		if(this.defaultRequestProcessor == null){
-			log.warn("没有请求处理器，数据将被丢弃：{}",msg);
-			return;
-		}
-		final RequestProcessor requestProcessor = this.defaultRequestProcessor.getObject1();
-		ExecutorService executorService = this.defaultRequestProcessor.getObject2();
+	private void handlerRequestProcessor(final ChannelHandlerContext ctx,final RemotingCommand request,Pair<RequestProcessor, ExecutorService> pair) {
+		final RequestProcessor requestProcessor = pair.getObject1();
+		ExecutorService executorService = pair.getObject2();
 		if(executorService == null){
-			RemotingCommand respose = requestProcessor.processRequest(ctx, msg);
+			RemotingCommand respose = requestProcessor.processRequest(ctx, request);
 			if(respose != null)ctx.writeAndFlush(respose);
 			return;
 		}
 		executorService.submit(new Runnable() {
 			@Override
 			public void run() {
-				RemotingCommand respose = requestProcessor.processRequest(ctx, msg);
+				RemotingCommand respose = requestProcessor.processRequest(ctx, request);
 				if(respose != null)ctx.writeAndFlush(respose);
 			}
 		});
+	}
+	
+	protected void processRequestCommand(final ChannelHandlerContext ctx,final RemotingCommand request) {
+		if(this.processorTable.get(request.getCode()) != null){
+			handlerRequestProcessor(ctx, request, this.processorTable.get(request.getCode()));
+			return;
+		}
+		if(this.defaultRequestProcessor != null){
+			handlerRequestProcessor(ctx, request, this.defaultRequestProcessor);
+			return;
+		}
+		log.warn("没有请求处理器，数据将被丢弃：{}",request);
 	}
 
 	protected void processResponseCommand(ChannelHandlerContext ctx,RemotingCommand msg) {

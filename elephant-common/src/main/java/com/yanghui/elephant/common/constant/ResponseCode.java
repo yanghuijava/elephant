@@ -1,6 +1,6 @@
 package com.yanghui.elephant.common.constant;
 
-public interface Constant {
+public interface ResponseCode {
 	
 	public static final int SUCCESS = 1;
 	

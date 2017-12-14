@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 import io.netty.channel.ChannelHandlerContext;
 
 import com.alibaba.fastjson.JSON;
-import com.yanghui.elephant.common.constant.Constant;
+import com.yanghui.elephant.common.constant.ResponseCode;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.constant.MessageStatus;
 import com.yanghui.elephant.common.constant.SendStatus;
@@ -40,12 +40,12 @@ public class NettyRequestProcessor implements RequestProcessor {
 		switch (request.getRemotingCommandCode()) {
 		case NORMAL_MESSAGE:
 			RemotingCommand response = handleMessage(request,false);
-			if(response.getCode() == Constant.SUCCESS){
+			if(response.getCode() == ResponseCode.SUCCESS){
 				Message message = (Message)request.getBody();
 				try {
 					sendMessageToMQ(message);
 				} catch (Exception e) {
-					response.setCode(Constant.SEND_MQ_FAIL);
+					response.setCode(ResponseCode.SEND_MQ_FAIL);
 					log.info("发送mq失败：{}",e);
 				}
 			}
@@ -65,7 +65,7 @@ public class NettyRequestProcessor implements RequestProcessor {
 	}
 	
 	private RemotingCommand handleMessage(RemotingCommand request,boolean isTransation){
-		RemotingCommand response = RemotingCommand.buildResposeCmd(Constant.SERVER_FAIL, request.getUnique());
+		RemotingCommand response = RemotingCommand.buildResposeCmd(ResponseCode.SERVER_FAIL, request.getUnique());
 		MessageEntity entity = this.bulidMessageEntity(request,isTransation);
 		int code = saveOrUpdateMassageEntity(entity,true);
 		response.setCode(code);
@@ -124,10 +124,10 @@ public class NettyRequestProcessor implements RequestProcessor {
 				update.setUpdateTime(new Date());
 				this.messageEntityMapper.updateById(update);
 			}
-			return Constant.SUCCESS;
+			return ResponseCode.SUCCESS;
 		} catch (Exception e) {
 			log.error("保存数据库失败：{}",e);
-			return Constant.FUSH_DB_FAIL;
+			return ResponseCode.FUSH_DB_FAIL;
 		}
 	}
 	

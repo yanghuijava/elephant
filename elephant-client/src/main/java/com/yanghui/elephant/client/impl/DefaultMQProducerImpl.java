@@ -22,7 +22,7 @@ import com.yanghui.elephant.client.producer.SendResult;
 import com.yanghui.elephant.client.producer.SendStatus;
 import com.yanghui.elephant.client.producer.TransactionMQProducer;
 import com.yanghui.elephant.client.producer.TransactionSendResult;
-import com.yanghui.elephant.common.constant.Constant;
+import com.yanghui.elephant.common.constant.ResponseCode;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.constant.RemotingCommandCode;
 import com.yanghui.elephant.common.message.Message;
@@ -102,16 +102,16 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 			RemotingCommand response = this.mqProducerFactory.getRemotingClient()
 					.invokeSync(choiceOneServer(), request, this.defaultMQProducer.getSendMsgTimeout());
 			switch (response.getCode()) {
-			case Constant.SUCCESS:
+			case ResponseCode.SUCCESS:
 				result.setSendStatus(SendStatus.SEND_OK);
 				break;
-			case Constant.FUSH_DB_FAIL:
+			case ResponseCode.FUSH_DB_FAIL:
 				result.setSendStatus(SendStatus.FLUSH_DB_FAIL);
 				break;
-			case Constant.SEND_MQ_FAIL:
+			case ResponseCode.SEND_MQ_FAIL:
 				result.setSendStatus(SendStatus.SEND_MQ_FAIL);
 				break;
-			case Constant.SERVER_FAIL:
+			case ResponseCode.SERVER_FAIL:
 				result.setSendStatus(SendStatus.SERVER_FAIL);
 				break;
 			default:

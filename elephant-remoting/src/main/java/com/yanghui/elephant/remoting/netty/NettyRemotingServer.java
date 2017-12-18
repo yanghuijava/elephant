@@ -2,7 +2,6 @@ package com.yanghui.elephant.remoting.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,18 +18,9 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -44,19 +34,12 @@ import com.yanghui.elephant.remoting.procotol.SerializeType;
 @Log4j2
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
 
-	private static final long LOCK_TIMEOUT_MILLIS = 1000;
-	private final Lock lockChannelTables = new ReentrantLock();
-	
 	private final ServerBootstrap serverBootstrap;
 	private final EventLoopGroup eventLoopGroupSelector;
 	private final EventLoopGroup eventLoopGroupBoss;
 	private final NettyServerConfig nettyServerConfig;
 
 	private DefaultEventExecutorGroup defaultEventExecutorGroup;
-	
-	private ScheduledExecutorService removeExpireKeyExecutor;
-	
-	private volatile ConcurrentHashMap<String,Set<Channel>> channelMap = new ConcurrentHashMap<String, Set<Channel>>();
 	
 	private int port = 0;
 	
@@ -82,7 +65,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 				return new Thread(r, String.format("NettyServerEPOLLSelector_%d_%d", threadTotal,this.threadIndex.incrementAndGet()));
 			}
 		});
-		this.removeExpireKeyExecutor = Executors.newSingleThreadScheduledExecutor();
+		
 	}
 
 	@Override
@@ -128,32 +111,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         } catch (InterruptedException e1) {
             throw new RuntimeException("this.serverBootstrap.bind().sync() InterruptedException", e1);
         }
-		this.removeExpireKeyExecutor.scheduleAtFixedRate(new Runnable() {
-			@Override
-			public void run() {
-				log.debug(channelMap);
-				try {
-					if(channelMap.isEmpty()){
-						return;
-					}
-					for(Entry<String,Set<Channel>> entry : channelMap.entrySet()){
-						if(entry.getValue() == null){
-							continue;
-						}
-						Set<Channel> removeSet = new HashSet<Channel>();
-						for(Channel c : entry.getValue()){
-							if(c.isActive()){
-								continue;
-							}
-							removeSet.add(c);
-						}
-						entry.getValue().removeAll(removeSet);
-					}
-				} catch (Exception e) {
-					log.error("removeExpireKeyExecutor error:{}",e);
-				}
-			}
-		}, 1000,3000,TimeUnit.MILLISECONDS);
 	}
 	
 	class NettyConnetManageHandler extends ChannelDuplexHandler{
@@ -182,32 +139,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 	    }
 		@Override
 		protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg)	throws Exception {
-			saveChannel(ctx.channel(), msg);
 			processMessageReceived(ctx, msg);
-		}
-	}
-	
-	private void saveChannel(Channel channel,RemotingCommand msg){
-		try {
-			Set<Channel> set = this.channelMap.get(msg.getGroup());
-			if(set != null){
-				set.add(channel);
-				return;
-			}
-			try{
-				if(lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)){
-					set = this.channelMap.get(msg.getGroup());
-					if(set == null){
-						set = new HashSet<Channel>();
-						channelMap.put(msg.getGroup(),set);
-					}
-					set.add(channel);
-				}
-			}finally{
-				lockChannelTables.unlock();
-			}
-		} catch (InterruptedException e) {
-			log.error("server save channel error:{}",e);
 		}
 	}
 	
@@ -218,8 +150,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         this.eventLoopGroupSelector.shutdownGracefully();
         
         this.defaultEventExecutorGroup.shutdownGracefully();
-        
-        this.removeExpireKeyExecutor.shutdown();
 	}
 
 	@Override
@@ -230,21 +160,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 	@Override
 	public int localListenPort() {
 		return this.port;
-	}
-
-	@Override
-	public void sendToClient(RemotingCommand request) {
-		Set<Channel> set = this.channelMap.get(request.getGroup());
-		if(set == null){
-			return;
-		}
-		for(Channel channel : set){
-			if(!channel.isActive()){
-				continue;
-			}
-			channel.writeAndFlush(request);
-			break;
-		}
 	}
 
 	@Override

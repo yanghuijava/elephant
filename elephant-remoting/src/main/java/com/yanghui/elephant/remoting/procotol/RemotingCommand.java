@@ -27,6 +27,15 @@ public class RemotingCommand implements Serializable{
 	private LocalTransactionState localTransactionState;
 	private String group;
 	
+	public static RemotingCommand buildRequestCmd(int requestCode,String remark){
+		RemotingCommand cmd = new RemotingCommand();
+		cmd.setUnique(requestId.getAndIncrement());
+		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
+		cmd.setCode(requestCode);
+		cmd.setRemark(remark);
+		return cmd;
+	}
+	
 	public static RemotingCommand buildRequestCmd(Message message,int requestCode,MessageCode messageCode){
 		RemotingCommand cmd = new RemotingCommand();
 		cmd.setUnique(requestId.getAndIncrement());

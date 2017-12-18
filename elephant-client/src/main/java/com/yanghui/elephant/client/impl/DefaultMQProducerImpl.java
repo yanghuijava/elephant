@@ -1,6 +1,5 @@
 package com.yanghui.elephant.client.impl;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.internal.StringUtil;
 
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 
 import lombok.extern.log4j.Log4j2;
 
-import com.google.common.collect.Lists;
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.producer.DefaultMQProducer;
 import com.yanghui.elephant.client.producer.LocalTransactionExecuter;
@@ -27,29 +25,25 @@ import com.yanghui.elephant.common.constant.ResponseCode;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
 import com.yanghui.elephant.common.constant.MessageCode;
 import com.yanghui.elephant.common.message.Message;
-import com.yanghui.elephant.register.dto.ServerDto;
-import com.yanghui.elephant.register.listener.IServerChanngeListener;
-import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.netty.NettyClientConfig;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 @Log4j2
-public class DefaultMQProducerImpl implements IServerChanngeListener {
+public class DefaultMQProducerImpl implements MQProducerInner{
 
-	protected MQProducerInstance mqProducerFactory;
+	protected MQClientInstance mqProducerFactory;
 
 	protected DefaultMQProducer defaultMQProducer;
 
-	protected volatile List<String> servers;
-	
 	protected BlockingQueue<Runnable> checkRequestQueue;
 	
 	protected ExecutorService checkExecutor;
+	
 
 	public DefaultMQProducerImpl(DefaultMQProducer defaultMQProducer) {
-		this.mqProducerFactory = MQProducerInstance.getInstance();
+		this.mqProducerFactory = MQClientInstance.getInstance();
 		this.defaultMQProducer = defaultMQProducer;
 	}
 
@@ -58,7 +52,6 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 		this.mqProducerFactory.setNettyClientConfig(new NettyClientConfig());
 		this.mqProducerFactory.setRegisterCenter(this.defaultMQProducer.getRegisterCenter());
 		this.mqProducerFactory.start();
-		initServers();
 	}
 	
 	private void checkConfig() throws MQClientException {
@@ -68,27 +61,14 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
         if(StringUtil.isNullOrEmpty(this.defaultMQProducer.getProducerGroup())){
         	throw new MQClientException("register center is null", null);
         }
+        synchronized (this.mqProducerFactory) {
+        	if(this.mqProducerFactory.getProducerMap().get(this.defaultMQProducer.getProducerGroup()) != null){
+        		throw new MQClientException("Group can not be the same！", null);
+        	}
+        	this.mqProducerFactory.getProducerMap().put(this.defaultMQProducer.getProducerGroup(), this);
+		}
+        
     }
-
-	private void initServers() {
-		/**
-		 * 获取服务器地址ip:port
-		 */
-		List<ServerDto> serverDtoList = this.mqProducerFactory
-				.getRegisterCenter4Invoker().getServerList();
-		if (serverDtoList.isEmpty()) {
-			throw new RuntimeException("server not start!");
-		}
-		this.servers = Lists.newArrayList();
-		for (ServerDto dto : serverDtoList) {
-			servers.add(dto.getIp() + ":" + dto.getPort());
-		}
-		/**
-		 * 注册服务器变化监听器
-		 */
-		this.mqProducerFactory.getRegisterCenter4Invoker().registerServerChanngeListener(this);
-	}
-
 	public void shutdown() {
 		this.mqProducerFactory.shutdown();
 	}
@@ -128,7 +108,8 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 	}
 	
 	private String choiceOneServer(){
-		return this.servers.get(new Random().nextInt(this.servers.size()));
+		List<String> servers = this.mqProducerFactory.getServers();
+		return servers.get(new Random().nextInt(servers.size()));
 	}
 	
 	public static void checkMessage(Message msg,DefaultMQProducer defaultMQProducer) throws MQClientException {
@@ -158,23 +139,29 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
             1000 * 60,
             TimeUnit.MILLISECONDS,
             this.checkRequestQueue);
-        this.mqProducerFactory.getRemotingClient().registerDefaultProcessor(
-        		new CheckLocalTransactionStateRequestProcessor(), this.checkExecutor);
+       this.mqProducerFactory.registerDefaultRequestProcessor();
 	}
 	
-	class CheckLocalTransactionStateRequestProcessor implements RequestProcessor{
-		@Override
-		public RemotingCommand processRequest(ChannelHandlerContext ctx,RemotingCommand request) {
-			TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
-			Message msg = request.getMessage();
-			LocalTransactionState localState = producer.getTransactionCheckListener().checkLocalTransactionState(msg);
-			RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(new Message(msg.getMessageId()),
-					RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_CHECK_MESSAGE);
-			checkTransactionRequest.setGroup(defaultMQProducer.getProducerGroup());
-			checkTransactionRequest.setLocalTransactionState(localState);
-			ctx.writeAndFlush(checkTransactionRequest);
-			return null;
-		}
+	@Override
+	public void checkTransactionState(final String address,final Message msg) {
+		Runnable run = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
+					producer.getTransactionCheckListener().checkLocalTransactionState(msg);
+					LocalTransactionState localState = producer.getTransactionCheckListener().checkLocalTransactionState(msg);
+					RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(new Message(msg.getMessageId()),
+							RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_CHECK_MESSAGE);
+					checkTransactionRequest.setGroup(defaultMQProducer.getProducerGroup());
+					checkTransactionRequest.setLocalTransactionState(localState);
+					mqProducerFactory.getRemotingClient().invokeOneway(address, checkTransactionRequest, 0);
+				} catch (Exception e){
+					log.error("check transaction state error:{}",e);
+				}
+			}
+		};
+		this.checkExecutor.submit(run);
 	}
 	
 	public void destroyTransaction() {
@@ -235,15 +222,5 @@ public class DefaultMQProducerImpl implements IServerChanngeListener {
 			request.setRemark("executeLocalTransactionBranch exception: " + localException.toString());
 		}
 		this.mqProducerFactory.getRemotingClient().invokeOneway(choiceOneServer(), request, this.defaultMQProducer.getSendMsgTimeout());
-	}
-
-	@Override
-	public void handleServerChannge(List<ServerDto> serverDtoList) {
-		this.servers.clear();
-		List<String> newServers = Lists.newArrayList();
-		for (ServerDto dto : serverDtoList) {
-			newServers.add(dto.getIp() + ":" + dto.getPort());
-		}
-		this.servers.addAll(newServers);
 	}
 }

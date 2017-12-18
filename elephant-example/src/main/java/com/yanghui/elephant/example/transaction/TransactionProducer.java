@@ -14,12 +14,12 @@ public class TransactionProducer {
 		producer.setTransactionCheckListener(new TransactionCheckListenerImpl());
 		producer.start();
 		
-//		LocalTransactionExecuter excuter = new LocalTransactionExecuterImpl();
-//		for(int i=0;i<1;i++){
-//			Message msg = new Message("topic://VirtualTopic.Test", ("我是事务消息" + i).getBytes());
-//			TransactionSendResult  transactionSendResult  = producer.sendMessageTransaction(msg, excuter, null);
-//			System.out.println(transactionSendResult);
-//		}
+		LocalTransactionExecuter excuter = new LocalTransactionExecuterImpl();
+		for(int i=0;i<1;i++){
+			Message msg = new Message("topic://VirtualTopic.Test", ("我是事务消息" + i).getBytes());
+			TransactionSendResult  transactionSendResult  = producer.sendMessageTransaction(msg, excuter, null);
+			System.out.println(transactionSendResult);
+		}
 //		producer.shutdown();
 	}
 }

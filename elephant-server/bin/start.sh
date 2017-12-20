@@ -1,1 +1,0 @@
-java -jar elephant-server.jar --spring.config.location=classpath:/config/config.properties

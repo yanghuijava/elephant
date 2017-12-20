@@ -19,11 +19,11 @@
             </includes>
         </fileSet>
         <fileSet>
-             <directory>bin</directory>
+             <directory>../bin</directory>
              <outputDirectory>/bin</outputDirectory>
          </fileSet>
          <fileSet>
-             <directory>config</directory>
+             <directory>../config</directory>
              <outputDirectory>/config</outputDirectory>
          </fileSet>
     </fileSets>

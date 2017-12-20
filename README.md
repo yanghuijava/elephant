@@ -23,7 +23,7 @@
 * elephant-example：示例代码
 * elephant-mq：各种mq客户端都可以集成这这里，目前只支持activemq
 * elephant-register：注册中心，基于zookeeper
-* elephant-remoting：底层通信封装，基于netty4.X
+* elephant-remoting：底层通信封装，基于netty4.x
 * elephant-server：服务器端，接受消息代理，事务消息回查
 * elephant-store：消息存储，目前基于mysql，可以扩展redis等
 

@@ -4,7 +4,7 @@ public interface ZKConstant {
 	
 	public static final String ZK_PATH_SEPARATOR = "/";
 	
-	public static final String ROOT_PATH = "/elephant";
+	public static final String ROOT_PATH = "/elephant-server";
 	public static final String SERVER_PATH = "/servers";
 	public static final String PRODUCER_PATH = "/producers";
 	

@@ -31,7 +31,11 @@
 
 ### 普通消息时序图
 
+![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E6%99%AE%E9%80%9A%E6%B6%88%E6%81%AF%E6%97%B6%E5%BA%8F%E5%9B%BE.png)
+
 ### 事务消息时序图
+
+![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF%E6%97%B6%E5%BA%8F%E5%9B%BE.png)
 
 
 

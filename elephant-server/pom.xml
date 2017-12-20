@@ -57,7 +57,7 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>elephant-server</finalName>
+		<finalName>elephant-server-${project.version}</finalName>
 		<resources>
 			<resource>
 				<filtering>true</filtering>

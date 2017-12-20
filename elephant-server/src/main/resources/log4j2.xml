@@ -7,7 +7,7 @@
 		<RollingFile name="FILE" fileName="/usr/local/logs/elephant-server.log"
 			append="true" filePattern="/usr/local/logs/elephant-server.%d{yyyy-MM-dd}.log">
 			<PatternLayout charset="utf-8"
-				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %t %-5p [%c][%M:%L] %fmeye - %m%n" />
+				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %t %-5p [%c][%M:%L] - %m%n" />
 			<Policies>
 				<TimeBasedTriggeringPolicy interval="1"
 					modulate="true" />
@@ -15,7 +15,7 @@
 		</RollingFile>
 	</appenders>
 	<loggers>
-		<root level="DEBUG">
+		<root level="INFO">
 			<appender-ref ref="CONSOLE" />
 			<appender-ref ref="FILE" />
 		</root>

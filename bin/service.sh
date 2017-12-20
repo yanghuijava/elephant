@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+export JAVA_HOME=/export/servers/jdk1.7.0_79
+export PATH=$JAVA_HOME/bin:$PATH
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar 
+
 JAR_PATH=`pwd`
 JAR_NAME="elephant-server"
 
 function service_start(){
-	java -jar -Xms1024M -Xmx1024M -Xss512k -XX:PermSize=256M -XX:MaxPermSize=256M "$JAR_PATH/$JAR_NAME.jar" --logging.config=classpath:config/log4j2.xml > /dev/null 2>&1 &
+	java -jar "$JAR_PATH/$JAR_NAME.jar" --logging.config=classpath:config/log4j2.xml > /dev/null 2>&1 &
 }
 
 function service_stop(){
@@ -61,3 +65,4 @@ case $1 in
                 fi
                 ;;
 esac
+

@@ -149,7 +149,6 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 			public void run() {
 				try {
 					TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
-					producer.getTransactionCheckListener().checkLocalTransactionState(msg);
 					LocalTransactionState localState = producer.getTransactionCheckListener().checkLocalTransactionState(msg);
 					RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(new Message(msg.getMessageId()),
 							RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_CHECK_MESSAGE);

@@ -12,7 +12,28 @@
 
 ![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF.png)
 
-### 投递流程
+### 消息投递流程
 
 ![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E5%8F%AF%E9%9D%A0%E6%B6%88%E6%81%AF%E6%8A%95%E9%80%921.png)
+
+## 简介
+
+* elephant-client：消息发送客户端
+* elephant-common：公共代码
+* elephant-example：示例代码
+* elephant-mq：各种mq客户端都可以集成这这里，目前只支持activemq
+* elephant-register：注册中心，基于zookeeper
+* elephant-remoting：底层通信封装，基于netty4.X
+* elephant-server：服务器端，接受消息代理，事务消息回查
+* elephant-store：消息存储，目前基于mysql，可以扩展redis等
+
+## 消息发送时序图
+
+### 普通消息时序图
+
+### 事务消息时序图
+
+
+
+
 

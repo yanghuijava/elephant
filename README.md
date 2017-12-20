@@ -8,4 +8,11 @@
 
 ## 原理图
 
+### 实现原理
+
 ![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF.png)
+
+### 投递流程
+
+![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF.png)
+

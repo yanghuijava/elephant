@@ -89,7 +89,24 @@ sh bin/service.sh start/stop/restart
 
 ## 开发说明
 
-请参照elephant-example里面的例子。
+把编译好的elephant-client jar包安装到本地maven仓库，然后引入
+```xml
+<dependency>
+    <groupId>com.yanghui.elephant</groupId>
+    <artifactId>elephant-client</artifactId>
+    <version>${编译好的版本号}</version>
+</dependency>
+```
+
+具体使用请参照elephant-example里面的例子。
+
+## 建议
+
+若您有任何建议，可以通过QQ或邮件反馈。
+
+QQ：672859954
+
+Email：672859954@qq.com
 
 
 

@@ -13,8 +13,12 @@ public class TransactionProducer {
 		producer.setRegisterCenter("172.16.21.12:2181");
 		producer.setTransactionCheckListener(new TransactionCheckListenerImpl());
 		producer.start();
-		
 		LocalTransactionExecuter excuter = new LocalTransactionExecuterImpl();
+		/**
+		 * 目前只支持activemq：
+		 * 发送queue，message的destination值加上前缀：queue://
+		 * 发送topic，message的destination值加上前缀：topic://
+		 */
 		for(int i=0;i<1;i++){
 			Message msg = new Message("topic://VirtualTopic.Test", ("我是事务消息" + i).getBytes());
 			TransactionSendResult  transactionSendResult  = producer.sendMessageTransaction(msg, excuter, null);

@@ -11,6 +11,11 @@ public class Producer {
 		DefaultMQProducer producer = new DefaultMQProducer("test");
 		producer.setRegisterCenter("172.16.21.12:2181");
 		producer.start();
+		/**
+		 * 目前只支持activemq：
+		 * 发送queue，message的destination值加上前缀：queue://
+		 * 发送topic，message的destination值加上前缀：topic://
+		 */
 		for(int i=0;i<1;i++){
 			Message msg = new Message("topic://VirtualTopic.Test", ("我是消息" + i).getBytes());
 			SendResult sendResult = producer.send(msg);

@@ -9,13 +9,12 @@
 			<PatternLayout charset="utf-8"
 				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %t %-5p [%c][%M:%L] - %m%n" />
 			<Policies>
-				<TimeBasedTriggeringPolicy interval="1"
-					modulate="true" />
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
 			</Policies>
 		</RollingFile>
 	</appenders>
 	<loggers>
-		<root level="INFO">
+		<root level="DEBUG">
 			<appender-ref ref="CONSOLE" />
 			<appender-ref ref="FILE" />
 		</root>

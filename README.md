@@ -54,7 +54,7 @@
 mvn clean install
 ```
 
-会在elephant-server/target目录下生成elephant-server-${version}.tar.gz包
+会在elephant-server/target目录下生成elephant-server.tar.gz包
 
 解压tar.gz包
 

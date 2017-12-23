@@ -26,6 +26,7 @@
 * elephant-remoting：底层通信封装，基于netty4.x
 * elephant-server：服务器端，接受消息代理，事务消息回查
 * elephant-store：消息存储，目前基于mysql，可以扩展redis等
+* elephant-springboot-amq-consumer：封装activemq的消费端
 
 ## 消息发送时序图
 
@@ -99,6 +100,51 @@ sh bin/service.sh start/stop/restart
 ```
 
 具体使用请参照elephant-example里面的例子。
+
+这里特别说明一下elephant-springboot-amq-consumer这个项目，我们知道activemq可以设置重试策略，当消费端消费消息失败的时候会根据重试策略进行重试，在一个队列中如果某个消息一直消费失败，那么这个队列后面的消息将会被阻塞，没法被消费，直到这个消息被acknowledge；为了解决这个问题，我引入重试队列概念，对消费端进行了封装，下面进行使用说明（基于springboot，普通的spring项目无法使用）：
+
+properties文件参数配置：
+
+```
+elephant.mq.activemq-broker-url=amq的地址
+elephant.mq.activemq-pool-max-connections=连接池大小
+elephant.mq.redelivery-delay=重试的间隔时间ms
+```
+
+springboot启动类上加注解：
+
+```java
+@EnableElephantMQ
+```
+
+写消息监听类：
+
+```java
+@Component
+public class MQListener {
+	
+	@QueueListener(name="yanghui.queue.test1")
+	public void test1(Message message) throws Exception{
+		BytesMessage bm = (BytesMessage)message;
+		byte[] value = new byte[(int)bm.getBodyLength()];
+		bm.readBytes(value);
+		System.out.println(new String(value,"utf-8"));
+	}
+```
+监听类必须交给spring容器管理，否则无效；方法必须加上注解（监听queue：@QueueListener，监听topic：@TopicListnener），加上注解的方法会启动一个监听线程。
+
+注解参数说明：
+
+* name：queue或者topic的名称。
+* retryTimes：重试次数，默认3次，当某个消息达到这个重试次数时，消息将会进入重试队列，进入重试队列的消息将会被无限重试，除非消息被消费成功或者手动acknowledge。
+
+备注：
+
+* 重试次数没有被持久化，均是基于内存的统计，当服务器宕机后重新启动，重试次数将会被重新开始统计。
+
+
+
+
 
 ## 建议
 

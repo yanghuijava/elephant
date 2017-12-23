@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.yanghui.elephant.mq.config.MQAutoConfiguration

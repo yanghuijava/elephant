@@ -22,6 +22,7 @@
 		<module>elephant-remoting</module>
 		<module>elephant-store</module>
 		<module>elephant-mq</module>
+		<module>elephant-springboot-amq-consumer</module>
 		<module>elephant-example</module>
 	</modules>
 

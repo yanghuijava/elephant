@@ -36,7 +36,7 @@ import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 @Log4j2
 public class MQClientInstance implements IServerChanngeListener{
 	
-	private static final MQClientInstance instance = new MQClientInstance();
+	private static final MQClientInstance INSTANCE = new MQClientInstance();
 	
 	private Map<String,MQProducerInner> producerMap = new HashMap<String, MQProducerInner>();
 	
@@ -65,7 +65,7 @@ public class MQClientInstance implements IServerChanngeListener{
 	}
 	
 	public static MQClientInstance getInstance(){
-		return instance;
+		return INSTANCE;
 	}
 	
 	

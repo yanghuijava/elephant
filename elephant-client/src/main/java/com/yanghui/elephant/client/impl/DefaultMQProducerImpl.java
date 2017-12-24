@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -138,7 +139,13 @@ public class DefaultMQProducerImpl implements MQProducerInner{
             producer.getCheckThreadPoolMaxSize(),
             1000 * 60,
             TimeUnit.MILLISECONDS,
-            this.checkRequestQueue);
+            this.checkRequestQueue,
+            new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					return new Thread(r, "transactioncheckExecutorThread");
+				}
+			});
        this.mqProducerFactory.registerDefaultRequestProcessor();
 	}
 	

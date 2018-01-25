@@ -79,32 +79,42 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 		SendResult result = new SendResult();
 		RemotingCommand request = RemotingCommand.buildRequestCmd(msg, RequestCode.SEND_MESSAGE, messageCode);
 		request.setGroup(this.defaultMQProducer.getProducerGroup());
-		try {
-			RemotingCommand response = this.mqProducerFactory.getRemotingClient()
-					.invokeSync(choiceOneServer(), request, this.defaultMQProducer.getSendMsgTimeout());
-			switch (response.getCode()) {
-			case ResponseCode.SUCCESS:
-				result.setSendStatus(SendStatus.SEND_OK);
-				break;
-			case ResponseCode.FUSH_DB_FAIL:
-				result.setSendStatus(SendStatus.FLUSH_DB_FAIL);
-				break;
-			case ResponseCode.SEND_MQ_FAIL:
-				result.setSendStatus(SendStatus.SEND_MQ_FAIL);
-				break;
-			case ResponseCode.SERVER_FAIL:
-				result.setSendStatus(SendStatus.SERVER_FAIL);
-				break;
-			default:
-				result.setSendStatus(SendStatus.SEND_FAIL);
-				break;
-			}
-		} catch(RemotingTimeoutException e){
-			result.setSendStatus(SendStatus.FLUSH_DISK_TIMEOUT);
-		}catch (Exception e) {
-			throw new MQClientException("message send exception", e);
-		}
+		MQClientException exception = null;
+		int timesTotal = 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed();
 		result.setMsgId(msg.getMessageId());
+		for (int times=0; times < timesTotal; times++) {
+			try {
+				RemotingCommand response = this.mqProducerFactory.getRemotingClient()
+						.invokeSync(choiceOneServer(), request, this.defaultMQProducer.getSendMsgTimeout());
+				switch (response.getCode()) {
+				case ResponseCode.SUCCESS:
+					result.setSendStatus(SendStatus.SEND_OK);
+					break;
+				case ResponseCode.FUSH_DB_FAIL:
+					result.setSendStatus(SendStatus.FLUSH_DB_FAIL);
+					break;
+				case ResponseCode.SEND_MQ_FAIL:
+					result.setSendStatus(SendStatus.SEND_MQ_FAIL);
+					break;
+				case ResponseCode.SERVER_FAIL:
+					result.setSendStatus(SendStatus.SERVER_FAIL);
+					break;
+				default:
+					result.setSendStatus(SendStatus.SEND_FAIL);
+					break;
+				}
+				return result;
+			} catch(RemotingTimeoutException e){
+				result.setSendStatus(SendStatus.FLUSH_DISK_TIMEOUT);
+				continue;
+			}catch (Exception e) {
+				exception =  new MQClientException("message send exception", e);
+				continue;
+			}
+		}
+		if(exception != null) {
+			throw exception;
+		}
 		return result;
 	}
 	

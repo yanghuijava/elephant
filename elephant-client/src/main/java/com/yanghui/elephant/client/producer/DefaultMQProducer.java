@@ -15,6 +15,8 @@ public class DefaultMQProducer implements MQProducer {
 	
 	protected long sendMsgTimeout = 3000;
 	
+	protected int retryTimesWhenSendFailed = 2;
+	
 	protected String registerCenter;
 	
 	protected DefaultMQProducerImpl defaultMQProducerImpl;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export JAVA_HOME=/export/servers/jdk1.7.0_79
+export JAVA_HOME=/usr/local/jdk1.7.0_79
 export PATH=$JAVA_HOME/bin:$PATH
 export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar 
 

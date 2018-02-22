@@ -10,6 +10,8 @@ public class EndTransactionRequestHeader implements CommandCustomHeader {
 	private String producerGroup;
 	
 	private String msgId;
-	
+	/**
+	 * 参照LocalTransactionState的值
+	 */
 	private String commitOrRollback;
 }

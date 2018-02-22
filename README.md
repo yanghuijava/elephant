@@ -12,10 +12,6 @@
 
 ![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF.png)
 
-### 消息投递流程
-
-![image](https://github.com/yanghuijava/elephant/blob/master/screenshots/%E5%8F%AF%E9%9D%A0%E6%B6%88%E6%81%AF%E6%8A%95%E9%80%921.png)
-
 ## 简介
 
 * elephant-client：消息发送客户端

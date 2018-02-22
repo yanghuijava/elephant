@@ -29,8 +29,11 @@ import com.yanghui.elephant.remoting.RemotingServer;
 import com.yanghui.elephant.remoting.RequestProcessor;
 import com.yanghui.elephant.remoting.common.RemotingUtil;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.SerializeType;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Log4j2
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
 
@@ -42,8 +45,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 	private DefaultEventExecutorGroup defaultEventExecutorGroup;
 	
 	private int port = 0;
-	
-	private SerializeType serializeTypeCurrentRPC = SerializeType.HESSIAN;
 	
 	public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
 		this.nettyServerConfig = nettyServerConfig;
@@ -91,9 +92,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
 						//编码
-						ch.pipeline().addLast(new NettyEncoder(serializeTypeCurrentRPC));
+						ch.pipeline().addLast(new NettyEncoder());
 						//解码
-						ch.pipeline().addLast(new NettyDecoder(RemotingCommand.class,serializeTypeCurrentRPC));
+						ch.pipeline().addLast(new NettyDecoder());
 						//心跳
 						ch.pipeline().addLast(new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()));
 						//业务处理

@@ -35,7 +35,7 @@ import com.yanghui.elephant.mq.properties.MQProperties;
 @Import({MQProperties.class,ActivemqConfig.class})
 public class MQAutoConfiguration implements ApplicationListener<ContextRefreshedEvent>{
 	
-	private boolean isRepeat = false;
+	private volatile boolean isRepeat = false;
 	@Autowired
 	private ConnectionFactory connectionFactory;
 	@Autowired

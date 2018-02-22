@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import lombok.extern.log4j.Log4j2;
 
+import com.alibaba.fastjson.JSON;
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.producer.DefaultMQProducer;
 import com.yanghui.elephant.client.producer.LocalTransactionExecuter;
@@ -24,8 +25,12 @@ import com.yanghui.elephant.client.producer.TransactionSendResult;
 import com.yanghui.elephant.common.constant.RequestCode;
 import com.yanghui.elephant.common.constant.ResponseCode;
 import com.yanghui.elephant.common.constant.LocalTransactionState;
-import com.yanghui.elephant.common.constant.MessageCode;
 import com.yanghui.elephant.common.message.Message;
+import com.yanghui.elephant.common.message.MessageConstant;
+import com.yanghui.elephant.common.message.MessageType;
+import com.yanghui.elephant.common.protocol.header.CheckTransactionStateResponseHeader;
+import com.yanghui.elephant.common.protocol.header.EndTransactionRequestHeader;
+import com.yanghui.elephant.common.protocol.header.SendMessageRequestHeader;
 import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
@@ -74,11 +79,22 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 		this.mqProducerFactory.shutdown();
 	}
 
-	public SendResult send(Message msg,MessageCode messageCode) throws MQClientException{
+	public SendResult send(Message msg) throws MQClientException{
 		checkMessage(msg, defaultMQProducer);
 		SendResult result = new SendResult();
-		RemotingCommand request = RemotingCommand.buildRequestCmd(msg, RequestCode.SEND_MESSAGE, messageCode);
-		request.setGroup(this.defaultMQProducer.getProducerGroup());
+		
+		SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
+		requestHeader.setDestination(msg.getDestination());
+		requestHeader.setMessageId(msg.getMessageId());
+		requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
+		requestHeader.setProperties(JSON.toJSONString(msg.getProperties()));
+		
+		String MessageTypeName = msg.getProperties().get(MessageConstant.PROPERTY_TRANSACTION_PREPARED);
+		requestHeader.setMessageType(MessageType.valueOfName(MessageTypeName).getType());
+		
+		RemotingCommand request = RemotingCommand.buildRequestCmd(requestHeader, RequestCode.SEND_MESSAGE);
+		request.setBody(msg.getBody());
+		
 		MQClientException exception = null;
 		int timesTotal = 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed();
 		result.setMsgId(msg.getMessageId());
@@ -160,18 +176,21 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 	}
 	
 	@Override
-	public void checkTransactionState(final String address,final Message msg) {
+	public void checkTransactionState(final String address,final String producerGroupe,final Message msg) {
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
 				try {
 					TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
 					LocalTransactionState localState = producer.getTransactionCheckListener().checkLocalTransactionState(msg);
-					RemotingCommand checkTransactionRequest = RemotingCommand.buildRequestCmd(new Message(msg.getMessageId()),
-							RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_CHECK_MESSAGE);
-					checkTransactionRequest.setGroup(defaultMQProducer.getProducerGroup());
-					checkTransactionRequest.setLocalTransactionState(localState);
-					mqProducerFactory.getRemotingClient().invokeOneway(address, checkTransactionRequest, 0);
+					
+					CheckTransactionStateResponseHeader header = new CheckTransactionStateResponseHeader();
+					header.setCommitOrRollback(localState.name());
+					header.setMessageId(msg.getMessageId());
+					header.setProducerGroup(defaultMQProducer.getProducerGroup());
+					
+					RemotingCommand request = RemotingCommand.buildRequestCmd(header,RequestCode.CHECK_TRANSACTION_RESPONSE);
+					mqProducerFactory.getRemotingClient().invokeOneway(address, request, 0);
 				} catch (Exception e){
 					log.error("check transaction state error:{}",e);
 				}
@@ -188,8 +207,12 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 	public TransactionSendResult sendMessageInTransaction(final Message msg,final LocalTransactionExecuter tranExecuter, final Object arg)throws MQClientException{
 		TransactionSendResult transactionSendResult = new TransactionSendResult();
 		SendResult sendResult = null;
+		
+		msg.getProperties().put(MessageConstant.PROPERTY_TRANSACTION_PREPARED, 
+				MessageType.TRANSACTION_PRE_MESSAGE.name());
+		
 		try {
-			sendResult = this.send(msg, MessageCode.TRANSACTION_PRE_MESSAGE);
+			sendResult = this.send(msg);
 		} catch (Exception e) {
 			throw new MQClientException("send message Exception", e);
 		}
@@ -230,10 +253,13 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 
 	private void endTransaction(SendResult sendResult,LocalTransactionState localState,
 			Throwable localException) throws InterruptedException, RemotingSendRequestException,RemotingTimeoutException,RemotingConnectException{
-		Message msg = new Message(sendResult.getMsgId());
-		RemotingCommand request = RemotingCommand.buildRequestCmd(msg,RequestCode.SEND_MESSAGE,MessageCode.TRANSACTION_END_MESSAGE);
-		request.setGroup(this.defaultMQProducer.getProducerGroup());
-		request.setLocalTransactionState(localState);
+		EndTransactionRequestHeader requestHeader = new EndTransactionRequestHeader();
+		requestHeader.setMsgId(sendResult.getMsgId());
+		requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
+		requestHeader.setCommitOrRollback(localState.name());
+		
+		RemotingCommand request = RemotingCommand.buildRequestCmd(requestHeader,RequestCode.END_TRANSACTION);
+		
 		if(localException != null){
 			request.setRemark("executeLocalTransactionBranch exception: " + localException.toString());
 		}

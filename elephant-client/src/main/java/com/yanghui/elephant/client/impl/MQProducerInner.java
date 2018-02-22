@@ -12,6 +12,6 @@ public interface MQProducerInner {
 	 * @param address
 	 * @param msg
 	 */
-	void checkTransactionState(final String address,final Message msg);
+	void checkTransactionState(final String address,final String producerGroupe,final Message msg);
 	
 }

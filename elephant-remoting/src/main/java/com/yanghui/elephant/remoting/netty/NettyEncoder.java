@@ -1,28 +1,31 @@
 package com.yanghui.elephant.remoting.netty;
 
+import com.yanghui.elephant.remoting.common.RemotingHelper;
+import com.yanghui.elephant.remoting.common.RemotingUtil;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.SerializeType;
-import com.yanghui.elephant.remoting.procotol.SerializerEngine;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-
+import lombok.extern.log4j.Log4j2;
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
+@Log4j2
 public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {
 
-	private SerializeType serializeType;
-
-    public NettyEncoder(SerializeType serializeType) {
-        this.serializeType = serializeType;
-    }
-	
 	@Override
-	protected void encode(ChannelHandlerContext ctx, RemotingCommand msg,ByteBuf out) throws Exception {
-		//将对象序列化为字节数组
-        byte[] data = SerializerEngine.serialize(msg, serializeType.getCode());
-        //将字节数组(消息体)的长度作为消息头写入,解决半包/粘包问题
-        out.writeInt(data.length);
-        //写入序列化后得到的字节数组
-        out.writeBytes(data);
+	protected void encode(ChannelHandlerContext ctx, RemotingCommand cmd,ByteBuf out) throws Exception {
+		try {
+			byte[] bytes = cmd.encode();
+			out.writeBytes(bytes);
+		} catch (Exception e) {
+			log.error("序列化发生异常, "+ RemotingHelper.parseChannelRemoteAddr(ctx.channel()), e);
+			if(null != null) {
+				log.error(cmd.toString());
+			}
+			RemotingUtil.closeChannel(ctx.channel());
+		}
 	}
 }

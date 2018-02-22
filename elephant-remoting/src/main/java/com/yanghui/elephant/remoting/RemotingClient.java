@@ -7,7 +7,11 @@ import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 public interface RemotingClient extends RemotingService{
 	
 	public void updateRegisterCenterAddressList(final List<String> addrs);
@@ -26,4 +30,6 @@ public interface RemotingClient extends RemotingService{
     void invokeOneway(final String addr, final RemotingCommand request,final long timeoutMillis)throws InterruptedException, RemotingSendRequestException,RemotingTimeoutException,RemotingConnectException;
 
     void registerDefaultProcessor(final RequestProcessor processor, final ExecutorService executor);
+    
+    void registerProcessor(int requestCode,final RequestProcessor processor, final ExecutorService executor);
 }

@@ -1,5 +1,9 @@
 package com.yanghui.elephant.remoting.exception;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 public class RemotingConnectException extends RemotingException {
 
 	private static final long serialVersionUID = -1761263285779090897L;

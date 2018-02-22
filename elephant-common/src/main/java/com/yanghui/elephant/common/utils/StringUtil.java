@@ -13,4 +13,11 @@ public class StringUtil {
 		}
 		return true;
 	}
+	
+	public static boolean isEmpty(String src) {
+		if(src == null || "".equals(src)) {
+			return true;
+		}
+		return false;
+	}
 }

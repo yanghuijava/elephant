@@ -1,4 +1,4 @@
-package com.yanghui.elephant.remoting.procotol;
+package com.yanghui.elephant.remoting.serialize;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 

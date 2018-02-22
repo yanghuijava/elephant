@@ -25,31 +25,66 @@ public class ServerConfiguration {
 	
 	@Resource(name="messageRequestProcessor")
 	private RequestProcessor messageRequestProcessor;
-	
+	@Resource(name="endTransactionMessageProcessor")
+	private RequestProcessor endTransactionMessageProcessor;
+	@Resource(name="checkTransactionStateResponseProcessor")
+	private RequestProcessor checkTransactionStateResponseProcessor;
 	@Resource(name="heartbeatRequestProcessor")
 	private RequestProcessor heartbeatRequestProcessor;
 	
 	private ExecutorService heartbeatExecutor;
 	
+	private ExecutorService handleMessageExecutor;
+	
+	private ExecutorService endTransactionMessageExecutor;
+	
+	private ExecutorService checkTransactionStateResponseExecutor;
+	
 	@PostConstruct
     public void initMethod() {
-		ThreadFactory threadFactory = new ThreadFactoryBuilder()
+		ThreadFactory threadFactory1 = new ThreadFactoryBuilder()
 	        .setNameFormat("heart-beat-executor-%d")
 	        .setDaemon(true)
 	        .build();
-        this.heartbeatExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),threadFactory);
-    }
+        this.heartbeatExecutor = Executors.newFixedThreadPool(
+        		Runtime.getRuntime().availableProcessors(),threadFactory1);
+    
+        ThreadFactory threadFactory2 = new ThreadFactoryBuilder()
+        		.setNameFormat("handle-message-executor-%d")
+    	        .setDaemon(true)
+    	        .build();
+        this.handleMessageExecutor = Executors.newFixedThreadPool(
+        		Runtime.getRuntime().availableProcessors(),threadFactory2);
+        
+        ThreadFactory threadFactory3 = new ThreadFactoryBuilder()
+        		.setNameFormat("end-transaction-message-executor-%d")
+    	        .setDaemon(true)
+    	        .build();
+        this.endTransactionMessageExecutor = Executors.newFixedThreadPool(
+        		Runtime.getRuntime().availableProcessors(),threadFactory3);
+        
+        ThreadFactory threadFactory4 = new ThreadFactoryBuilder()
+        		.setNameFormat("check-transactionState-response-executor-%d")
+    	        .setDaemon(true)
+    	        .build();
+        this.checkTransactionStateResponseExecutor = Executors.newFixedThreadPool(
+        		Runtime.getRuntime().availableProcessors(),threadFactory4);
+	}
 	
 	@PreDestroy  
     public void destroyMethod() {  
-        this.heartbeatExecutor.shutdown();  
+        this.heartbeatExecutor.shutdown();
     }  
 	
 	@Bean(initMethod="start",destroyMethod="shutdown")
 	public NettyRemotingServer nettyRemotingServer(){
 		NettyRemotingServer server = new NettyRemotingServer(new NettyServerConfig());
-		server.registerDefaultProcessor(this.messageRequestProcessor, null);
+		server.registerProcessor(RequestCode.SEND_MESSAGE,this.messageRequestProcessor,this.handleMessageExecutor);
+		server.registerProcessor(RequestCode.END_TRANSACTION,this.endTransactionMessageProcessor,
+				this.endTransactionMessageExecutor);
 		server.registerProcessor(RequestCode.HEART_BEAT, this.heartbeatRequestProcessor, this.heartbeatExecutor);
+		server.registerProcessor(RequestCode.CHECK_TRANSACTION_RESPONSE, this.checkTransactionStateResponseProcessor,
+				this.checkTransactionStateResponseExecutor);
 		return server;
 	}
 	

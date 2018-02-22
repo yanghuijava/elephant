@@ -21,6 +21,8 @@ import io.netty.util.internal.StringUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -40,8 +42,11 @@ import com.yanghui.elephant.remoting.exception.RemotingConnectException;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-import com.yanghui.elephant.remoting.procotol.SerializeType;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Log4j2
 public class NettyRemotingClient extends NettyRemotingAbstract implements RemotingClient {
 	
@@ -51,12 +56,13 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 	private final Bootstrap bootstrap = new Bootstrap();
 	private final EventLoopGroup eventLoopGroupWorker;
 	private final Lock lockChannelTables = new ReentrantLock();
+	
+	private final Timer timer = new Timer("scanResponseTable", true);
+	
 	private final ConcurrentHashMap<String, ChannelWrapper> channelTables = new ConcurrentHashMap<>();
 
 	private DefaultEventExecutorGroup defaultEventExecutorGroup;
 	
-	private SerializeType serializeTypeCurrentRPC = SerializeType.HESSIAN;
-
 	public NettyRemotingClient(NettyClientConfig nettyClientConfig) {
 		this.nettyClientConfig = nettyClientConfig;
 		this.eventLoopGroupWorker = new NioEventLoopGroup(1,new ThreadFactory() {
@@ -89,17 +95,26 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
 						// 编码
-						ch.pipeline().addLast(new NettyEncoder(serializeTypeCurrentRPC));
+						ch.pipeline().addLast(new NettyEncoder());
 						// 解码
-						ch.pipeline().addLast(new NettyDecoder(RemotingCommand.class,serializeTypeCurrentRPC));
+						ch.pipeline().addLast(new NettyDecoder());
 						// 心跳
 						ch.pipeline().addLast(new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()));
 						// 业务处理
 						ch.pipeline().addLast(defaultEventExecutorGroup,new NettyConnectManageHandler(), new NettyClientHandler());
 					}
 				});
+		this.timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					NettyRemotingClient.this.scanResponseTable();
+				} catch (Throwable e) {
+					log.error("scanResponseTable exception:{}",e);
+				}
+			}
+		}, 1000 * 3, 1000);
 	}
-	
 	
 	class NettyConnectManageHandler extends ChannelDuplexHandler{
 		@Override
@@ -151,6 +166,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 	@Override
 	public void shutdown() {
 		try {
+			this.timer.cancel();
 			for (ChannelWrapper cw : this.channelTables.values()) {
 				this.closeChannel(cw.getChannel());
 			}
@@ -376,6 +392,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 	@Override
 	public void registerDefaultProcessor(RequestProcessor processor,ExecutorService executor) {
 		this.defaultRequestProcessor = new Pair<RequestProcessor, ExecutorService>(processor, executor);
+	}
+	
+	@Override
+	public void registerProcessor(int requestCode, RequestProcessor processor,ExecutorService executor) {
+		Pair<RequestProcessor, ExecutorService> pair = new Pair<RequestProcessor, ExecutorService>(processor, executor);
+		this.processorTable.put(requestCode, pair);
 	}
 
 	@Override

@@ -13,4 +13,14 @@ public enum LocalTransactionState {
      * 未知消息
      */
     UNKNOW,
+    ;
+	
+	public static LocalTransactionState valueOfName(String name) {
+		for(LocalTransactionState state : LocalTransactionState.values()) {
+			if(state.name().equals(name)) {
+				return state;
+			}
+		}
+		return null;
+	}
 }

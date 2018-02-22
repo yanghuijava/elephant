@@ -16,8 +16,11 @@ import lombok.Data;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.yanghui.elephant.common.constant.RequestCode;
+import com.yanghui.elephant.common.message.Message;
+import com.yanghui.elephant.common.protocol.header.CheckTransactionStateRequestHeader;
 import com.yanghui.elephant.register.IRegisterCenter4Invoker;
 import com.yanghui.elephant.register.dto.ServerDto;
 import com.yanghui.elephant.register.impl.ZkClientRegisterCenter;
@@ -46,8 +49,6 @@ public class MQClientInstance implements IServerChanngeListener{
 	private IRegisterCenter4Invoker registerCenter4Invoker;
 	
 	protected volatile List<String> servers;
-	
-	
 	
 	private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
@@ -155,11 +156,25 @@ public class MQClientInstance implements IServerChanngeListener{
 	}
 	
 	class CheckLocalTransactionStateRequestProcessor implements RequestProcessor{
+		@SuppressWarnings("unchecked")
 		@Override
 		public RemotingCommand processRequest(ChannelHandlerContext ctx,RemotingCommand request) {
-			MQProducerInner inner = producerMap.get(request.getGroup());
-			String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
-			inner.checkTransactionState(remoteAddress, request.getMessage());
+			try {
+				CheckTransactionStateRequestHeader requestHeader = (CheckTransactionStateRequestHeader)request.decodeCommandCustomHeader(CheckTransactionStateRequestHeader.class);
+				
+				MQProducerInner inner = producerMap.get(requestHeader.getProducerGroup());
+				String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+				
+				Message message = new Message();
+				message.setBody(request.getBody());
+				message.setDestination(requestHeader.getDestination());
+				message.setMessageId(requestHeader.getMessageId());
+				message.setProperties((Map<String, String>)JSON.parseObject(requestHeader.getProperties(), Map.class));
+				
+				inner.checkTransactionState(remoteAddress,requestHeader.getProducerGroup(),message);
+			} catch (Exception e) {
+				log.error("处理事务消息回查发生异常：{}",e);
+			}
 			return null;
 		}
 	}

@@ -1,4 +1,4 @@
-package com.yanghui.elephant.remoting.procotol;
+package com.yanghui.elephant.remoting.serialize;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,7 +8,11 @@ import lombok.extern.log4j.Log4j2;
 
 import com.caucho.hessian.io.HessianInput;
 import com.caucho.hessian.io.HessianOutput;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Log4j2
 public class HessianSerializer implements ISerializer {
 	

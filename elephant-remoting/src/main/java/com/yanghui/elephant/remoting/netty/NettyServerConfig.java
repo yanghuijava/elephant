@@ -1,7 +1,11 @@
 package com.yanghui.elephant.remoting.netty;
 
 import lombok.Data;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Data
 public class NettyServerConfig implements Cloneable {
     private int listenPort = 8888;

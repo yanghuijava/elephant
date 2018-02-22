@@ -10,5 +10,6 @@
     <artifactId>elephant-common</artifactId>
     <name>elephant-common ${project.version}</name>
     <dependencies>
+    	
     </dependencies>
 </project>

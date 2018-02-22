@@ -9,10 +9,21 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class TransactionMQProducer extends DefaultMQProducer {
-	
+	/**
+	 * 消息回查监听器
+	 */
 	private TransactionCheckListener transactionCheckListener;
+	/**
+	 * 回查的线程池的最小值
+	 */
     private int checkThreadPoolMinSize = 1;
+    /**
+     * 回查的线程池的最大值
+     */
     private int checkThreadPoolMaxSize = 1;
+    /**
+     * 回查的最大请求数
+     */
     private int checkRequestHoldMax = 2000;
     
     public TransactionMQProducer(){
@@ -42,6 +53,6 @@ public class TransactionMQProducer extends DefaultMQProducer {
 		if(null == excuter){
 			throw new MQClientException("localTransactionExecuter is null", null);
 		}
-		return this.defaultMQProducerImpl.sendMessageInTransaction(msg,excuter, arg);
+		return this.defaultMQProducerImpl.sendMessageInTransaction(msg,excuter,arg);
 	}
 }

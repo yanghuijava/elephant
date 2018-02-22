@@ -14,13 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import com.alibaba.fastjson.JSON;
 import com.dangdang.ddframe.job.api.ShardingContext;
 import com.dangdang.ddframe.job.api.simple.SimpleJob;
 import com.google.common.collect.Lists;
-import com.yanghui.elephant.common.constant.MessageCode;
 import com.yanghui.elephant.common.constant.RequestCode;
-import com.yanghui.elephant.common.message.Message;
+import com.yanghui.elephant.common.protocol.header.CheckTransactionStateRequestHeader;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
 import com.yanghui.elephant.server.service.ProducerManager;
 import com.yanghui.elephant.store.entity.MessageEntity;
@@ -35,7 +33,6 @@ public class TransactionCheckJob implements SimpleJob{
 	@Autowired
 	private ProducerManager producerManager;
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void execute(ShardingContext shardingContext) {
 		List<MessageEntity> findList = this.messageEntityMapper.queryTransactionNotComplete();
@@ -45,15 +42,19 @@ public class TransactionCheckJob implements SimpleJob{
 		}
 		try {
 			for(MessageEntity entity : findList){
-				Message message = new Message();
-				message.setMessageId(entity.getMessageId());
-				message.setBody(entity.getBody());
-				message.setDestination(entity.getDestination());
+				
+				CheckTransactionStateRequestHeader requestHeader = new CheckTransactionStateRequestHeader();
+				
+				requestHeader.setMessageId(entity.getMessageId());
+				requestHeader.setDestination(entity.getDestination());
+				requestHeader.setProducerGroup(entity.getGroup());
 				if(!StringUtil.isNullOrEmpty(entity.getProperties())){
-					message.setProperties(JSON.parseObject(entity.getProperties(), Map.class));
+					requestHeader.setProperties(entity.getProperties());
 				}
-				RemotingCommand request = RemotingCommand.buildRequestCmd(message, RequestCode.SEND_MESSAGE, MessageCode.TRANSACTION_CHECK_MESSAGE);
-				request.setGroup(entity.getGroup());
+				
+				RemotingCommand request = RemotingCommand.buildRequestCmd(requestHeader,RequestCode.CHECK_TRANSACTION);
+				request.setBody(entity.getBody());
+				
 				sentToClient(request);
 			}
 		} catch (Exception e) {
@@ -63,11 +64,13 @@ public class TransactionCheckJob implements SimpleJob{
 	
 	private void sentToClient(RemotingCommand request){
 		Map<String,Set<Channel>> groupChannelTable = this.producerManager.getGroupChannelTable();
-		if(groupChannelTable.get(request.getGroup()) == null || 
-				CollectionUtils.isEmpty(groupChannelTable.get(request.getGroup()))){
+		
+		CheckTransactionStateRequestHeader requestHeader = (CheckTransactionStateRequestHeader)request.getCommandCustomHeader();
+		if(groupChannelTable.get(requestHeader.getProducerGroup()) == null || 
+				CollectionUtils.isEmpty(groupChannelTable.get(requestHeader.getProducerGroup()))){
 			return;
 		}
-		List<Channel> channels = Lists.newArrayList(groupChannelTable.get(request.getGroup()));
+		List<Channel> channels = Lists.newArrayList(groupChannelTable.get(requestHeader.getProducerGroup()));
 		Channel c = channels.get(new Random().nextInt(channels.size()));
 		if(c.isActive()){
 			c.writeAndFlush(request);

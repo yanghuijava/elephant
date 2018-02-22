@@ -6,7 +6,11 @@ import java.util.concurrent.TimeUnit;
 import lombok.Data;
 
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Data
 public class ResponseFuture {
 	
@@ -14,18 +18,26 @@ public class ResponseFuture {
 	
 	private final int unique;
 	
-	//结果返回时间
+	/**
+	 * 结果返回时间
+	 */
     private long responseTime;
     
-    //超时时间
+    /**
+     * 超时时间
+     */
     private final long timeoutMillis;
     
-    //结果
+    /**
+     * 结果
+     */
     private volatile RemotingCommand remotingCommand;
     
     private volatile boolean sendRequestOK = true;
     
-    //开始时间
+    /**
+     * 开始时间
+     */
     private final long beginTimestamp = System.currentTimeMillis();
     
     private volatile Throwable cause;

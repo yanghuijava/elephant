@@ -33,7 +33,7 @@ public class ZkClientRegisterCenter implements IRegisterCenter4Invoker,IRegister
 	 * zkclient会话超时时间
 	 */
     private int zkSessionTimeOut = 30000;
-    private int zkConnectionTimeOut = 1000;
+    private int zkConnectionTimeOut = 5000;
     
     private IZKReconnectionListener zkReconnectionListener;
     

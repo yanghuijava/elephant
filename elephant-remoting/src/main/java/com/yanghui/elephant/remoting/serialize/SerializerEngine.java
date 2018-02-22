@@ -1,16 +1,20 @@
-package com.yanghui.elephant.remoting.procotol;
+package com.yanghui.elephant.remoting.serialize;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 public class SerializerEngine {
 	
-	public static final Map<SerializeType, ISerializer> serializerMap = new ConcurrentHashMap<SerializeType, ISerializer>();
+	private static final Map<SerializeType, ISerializer> serializerMap = new ConcurrentHashMap<SerializeType, ISerializer>();
 
-	
 	static {
 		serializerMap.put(SerializeType.HESSIAN,new HessianSerializer());
 		serializerMap.put(SerializeType.JSON,new JsonSerializer());
+		serializerMap.put(SerializeType.CUSTOM, new CostomSerializer());
 	}
 	
 	public static <T> byte[] serialize(T obj, byte code) {

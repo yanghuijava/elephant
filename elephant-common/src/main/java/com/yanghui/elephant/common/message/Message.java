@@ -1,6 +1,7 @@
 package com.yanghui.elephant.common.message;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class Message implements Serializable{
 	private String messageId;
 	private String destination;
 	private byte[] body;
-	private Map<String,String> properties;
+	private Map<String,String> properties = new HashMap<>();
 	
 	public Message(){
 	}

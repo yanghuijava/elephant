@@ -7,7 +7,9 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.net.SocketAddress;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +20,11 @@ import com.yanghui.elephant.remoting.common.RemotingHelper;
 import com.yanghui.elephant.remoting.exception.RemotingSendRequestException;
 import com.yanghui.elephant.remoting.exception.RemotingTimeoutException;
 import com.yanghui.elephant.remoting.procotol.RemotingCommand;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 @Log4j2
 public abstract class NettyRemotingAbstract {
 	
@@ -30,14 +36,28 @@ public abstract class NettyRemotingAbstract {
 	protected final ConcurrentHashMap<Integer, ResponseFuture> responseTable =
 	        new ConcurrentHashMap<Integer, ResponseFuture>(256);
 	
+	/**
+	 * 扫描响应列表，超时的删除
+	 */
+	protected void scanResponseTable() {
+		Iterator<Entry<Integer, ResponseFuture>> it = responseTable.entrySet().iterator();
+		while(it.hasNext()) {
+     	  Entry<Integer, ResponseFuture> entry = it.next();
+     	  ResponseFuture rf = entry.getValue();
+     	   if((rf.getBeginTimestamp() + rf.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
+     		   it.remove();
+     		   log.warn("remove timeout request, {}",entry.getValue());
+     	   }
+        }
+	}
 	
-	protected void processMessageReceived(ChannelHandlerContext ctx,RemotingCommand msg) {
-		switch (msg.getType()) {
+	protected void processMessageReceived(ChannelHandlerContext ctx,RemotingCommand cmd) {
+		switch (cmd.getRemotingCommandType()) {
 		case REQUEST_COMMAND:
-			processRequestCommand(ctx, msg);
+			processRequestCommand(ctx, cmd);
 			break;
 		case RESPONSE_COMMAND:
-			processResponseCommand(ctx,msg);
+			processResponseCommand(ctx,cmd);
 			break;
 		default:
 			break;
@@ -117,7 +137,7 @@ public abstract class NettyRemotingAbstract {
 			}
 			return respose;
 		}finally{
-			responseTable.remove(unique);
+			this.responseTable.remove(unique);
 		}
 	}
 	

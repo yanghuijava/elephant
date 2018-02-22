@@ -1,5 +1,9 @@
 package com.yanghui.elephant.remoting.exception;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 public class RemotingTimeoutException extends RemotingException {
 
 	public RemotingTimeoutException(String message) {

@@ -1,7 +1,11 @@
 package com.yanghui.elephant.remoting;
 
 import java.util.concurrent.ExecutorService;
-
+/**
+ * 
+ * @author --小灰灰--
+ *
+ */
 public interface RemotingServer extends RemotingService{
 	
 	int localListenPort();

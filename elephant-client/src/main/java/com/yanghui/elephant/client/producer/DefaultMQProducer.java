@@ -4,19 +4,34 @@ import lombok.Data;
 
 import com.yanghui.elephant.client.exception.MQClientException;
 import com.yanghui.elephant.client.impl.DefaultMQProducerImpl;
-import com.yanghui.elephant.common.constant.MessageCode;
 import com.yanghui.elephant.common.message.Message;
+/**
+ * 普通消息生产者
+ * @author --小灰灰--
+ * 
+ */
 @Data
 public class DefaultMQProducer implements MQProducer {
 	
-	protected int maxMessageSize = 1024 * 1024 * 4; // 4M
-	
+	/**
+	 * 消息的最大长度（4M）
+	 */
+	protected int maxMessageSize = 1024 * 1024 * 4;
+	/**
+	 * 生产者分组
+	 */
 	protected String producerGroup;
-	
+	/**
+	 * 发送消息的超时时间
+	 */
 	protected long sendMsgTimeout = 3000;
-	
+	/**
+	 * 发送失败的超时次数
+	 */
 	protected int retryTimesWhenSendFailed = 2;
-	
+	/**
+	 * 注册中心地址
+	 */
 	protected String registerCenter;
 	
 	protected DefaultMQProducerImpl defaultMQProducerImpl;
@@ -42,7 +57,7 @@ public class DefaultMQProducer implements MQProducer {
 
 	@Override
 	public SendResult send(Message msg) throws MQClientException {
-		return this.defaultMQProducerImpl.send(msg,MessageCode.NORMAL_MESSAGE);
+		return this.defaultMQProducerImpl.send(msg);
 	}
 
 	@Override

@@ -75,6 +75,8 @@ spring.datasource.password=root
 elephant.zk-server=localhost:2181
 #activemq地址
 elephant.mq.activemq-broker-url=failover://(tcp://localhost:61616)?initialReconnectDelay=100
+# 指定ip
+elephant.server.public-network-ip=
 ```
 * log4j2.xml：可以修改日志的输出路径
 

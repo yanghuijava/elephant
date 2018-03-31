@@ -8,6 +8,6 @@ public class LocalTransactionExecuterImpl implements LocalTransactionExecuter {
 
 	@Override
 	public LocalTransactionState executeLocalTransactionBranch(Message msg,Object arg) {
-		return LocalTransactionState.UNKNOW;
+		return LocalTransactionState.COMMIT_MESSAGE;
 	}
 }

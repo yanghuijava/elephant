@@ -266,29 +266,4 @@ public class RemotingCommand extends Serializer implements Serializable{
 		this.writeString(this.remark);
 		this.writeMap(this.extFields);
 	}
-	
-	
-	/**
-	 * +---------------------------------------------------------------------------------------------------------+
-	 * |以下要删除
-	 * +---------------------------------------------------------------------------------------------------------+
-	 */
-	
-	
-//	private RemotingCommandType type;
-//	private MessageCode messageCode;
-//	private Message message;
-//	private LocalTransactionState localTransactionState;
-//	private String group;
-//	
-//	
-//	public static RemotingCommand buildRequestCmd(Message message,int requestCode,MessageCode messageCode){
-//		RemotingCommand cmd = new RemotingCommand();
-//		cmd.setUnique(requestId.getAndIncrement());
-//		cmd.setMessage(message);
-//		cmd.setType(RemotingCommandType.REQUEST_COMMAND);
-//		cmd.setMessageCode(messageCode);
-//		cmd.setCode(requestCode);
-//		return cmd;
-//	}
 }

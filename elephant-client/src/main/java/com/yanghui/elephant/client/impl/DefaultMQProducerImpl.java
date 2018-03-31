@@ -122,7 +122,7 @@ public class DefaultMQProducerImpl implements MQProducerInner{
 				return result;
 			} catch(RemotingTimeoutException e){
 				result.setSendStatus(SendStatus.FLUSH_DISK_TIMEOUT);
-				continue;
+				break;
 			}catch (Exception e) {
 				exception =  new MQClientException("message send exception", e);
 				continue;

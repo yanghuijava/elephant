@@ -87,6 +87,10 @@ public class MQClientInstance implements IServerChanngeListener{
 	
 	private void initServers() {
 		/**
+		 * 注册服务器变化监听器
+		 */
+		this.registerCenter4Invoker.registerServerChanngeListener(this);
+		/**
 		 * 获取服务器地址ip:port
 		 */
 		List<ServerDto> serverDtoList = this.registerCenter4Invoker.getServerList();
@@ -97,10 +101,7 @@ public class MQClientInstance implements IServerChanngeListener{
 		for (ServerDto dto : serverDtoList) {
 			servers.add(dto.getIp() + ":" + dto.getPort());
 		}
-		/**
-		 * 注册服务器变化监听器
-		 */
-		this.registerCenter4Invoker.registerServerChanngeListener(this);
+		
 	}
 	
 	private void startScheduledTask() {

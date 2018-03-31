@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.yanghui.elephant.common.utils.DateUtil;
 import com.yanghui.elephant.common.utils.IPHelper;
@@ -24,6 +25,8 @@ public class BeanAutoConfiguration implements ApplicationListener<EmbeddedServle
 	private RemotingServer remotingServer;
 	@Value("${spring.application.name}")
 	private String serverName;
+	@Value("${elephant.server.public-network-ip}")
+	private String publicNetworkIp;
 	
 	private volatile Boolean flag = false;
 	
@@ -44,9 +47,15 @@ public class BeanAutoConfiguration implements ApplicationListener<EmbeddedServle
 	private ServerDto buildServerDto(){
 		ServerDto serverDto = new ServerDto();
 		serverDto.setServerName(this.serverName);
-		serverDto.setIp(IPHelper.getRealIp());
+		
 		serverDto.setPort(this.remotingServer.localListenPort());
 		serverDto.setDateTime(DateUtil.formatAsDateTime(new Date()));
+		
+		if(!StringUtils.isEmpty(this.publicNetworkIp)) {
+			serverDto.setIp(this.publicNetworkIp);
+		}else {
+			serverDto.setIp(IPHelper.getRealIp());
+		}
 		return serverDto;
 	}
 
